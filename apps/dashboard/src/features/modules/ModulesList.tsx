@@ -12,12 +12,16 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
 import type { Module, Program } from '@talendig/shared';
 import { LoadingSpinner } from '@talendig/shared';
 import { Box } from '@mui/material';
+import { ModuleForm } from './ModuleForm';
 
 export const ModulesList: FC = () => {
   const { modulesService, programsService } = useServices();
@@ -25,6 +29,8 @@ export const ModulesList: FC = () => {
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [loading, setLoading] = useState(true);
+  const [editingModule, setEditingModule] = useState<Module | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     loadPrograms();
@@ -68,6 +74,25 @@ export const ModulesList: FC = () => {
       console.error('Error loading modules:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditClick = (module: Module) => {
+    setEditingModule(module);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+    setEditingModule(null);
+  };
+
+  const handleUpdateSuccess = () => {
+    handleDialogClose();
+    if (selectedProgramId) {
+      loadModules();
+    } else {
+      loadAllModules();
     }
   };
 
@@ -115,7 +140,7 @@ export const ModulesList: FC = () => {
                 <TableCell>{new Date(module.endDate).toLocaleDateString()}</TableCell>
                 <TableCell>{module.hours}h</TableCell>
                 <TableCell>
-                  <IconButton size="small" onClick={() => console.log('Edit', module.id)}>
+                  <IconButton size="small" onClick={() => handleEditClick(module)}>
                     <EditIcon />
                   </IconButton>
                 </TableCell>
@@ -124,6 +149,23 @@ export const ModulesList: FC = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      <Dialog
+        open={dialogOpen}
+        onClose={handleDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>Edit Module</DialogTitle>
+        <DialogContent>
+          {editingModule && (
+            <ModuleForm
+              module={editingModule}
+              onSuccess={handleUpdateSuccess}
+              onCancel={handleDialogClose}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </Box>
   );
 };
