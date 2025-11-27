@@ -4,14 +4,11 @@
   "license": "MIT",
   "packageManager": "pnpm@10.10.0",
   "scripts": {
-    "dev": "nx dev dashboard",
-    "start": "nx dev dashboard",
-    "build": "nx build dashboard",
-    "serve": "nx serve-static dashboard",
-    "preview": "nx preview dashboard",
-    "test": "nx test dashboard",
-    "lint": "nx lint dashboard",
-    "typecheck": "nx typecheck dashboard"
+    "dev:dashboard": "nx dev dashboard",
+    "build:dashboard": "nx build dashboard",
+    "test:dashboard": "nx test dashboard",
+    "lint:dashboard": "nx lint dashboard",
+    "typecheck:dashboard": "nx typecheck dashboard"
   },
   "private": true,
   "dependencies": {
