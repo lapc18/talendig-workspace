@@ -19,7 +19,7 @@ export default defineConfig(() => ({
   //  plugins: [],
   // },
   build: {
-    outDir: './dist',
+    outDir: '../../dist/apps/dashboard',
     emptyOutDir: true,
     reportCompressedSize: true,
     commonjsOptions: {
