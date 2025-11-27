@@ -15,17 +15,25 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
+  Link,
+  Typography,
 } from '@mui/material';
 import { Edit as EditIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
 import type { Module, Program } from '@talendig/shared';
 import { LoadingSpinner } from '@talendig/shared';
 import { Box } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import { ModuleForm } from './ModuleForm';
+
+interface ModuleWithProgram extends Module {
+  program?: Program;
+}
 
 export const ModulesList: FC = () => {
   const { modulesService, programsService } = useServices();
-  const [modules, setModules] = useState<Module[]>([]);
+  const navigate = useNavigate();
+  const [modules, setModules] = useState<ModuleWithProgram[]>([]);
   const [programs, setPrograms] = useState<Program[]>([]);
   const [selectedProgramId, setSelectedProgramId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -57,7 +65,22 @@ export const ModulesList: FC = () => {
     try {
       setLoading(true);
       const data = await modulesService.getByProgramId(selectedProgramId);
-      setModules(data);
+      // Load program information for each module
+      const modulesWithPrograms = await Promise.all(
+        data.map(async (module) => {
+          if (module.programId) {
+            try {
+              const program = await programsService.getById(module.programId);
+              return { ...module, program: program || undefined };
+            } catch (error) {
+              console.error(`Error loading program for module ${module.id}:`, error);
+              return module;
+            }
+          }
+          return module;
+        })
+      );
+      setModules(modulesWithPrograms);
     } catch (error) {
       console.error('Error loading modules:', error);
     } finally {
@@ -69,7 +92,22 @@ export const ModulesList: FC = () => {
     try {
       setLoading(true);
       const data = await modulesService.getAll();
-      setModules(data);
+      // Load program information for each module
+      const modulesWithPrograms = await Promise.all(
+        data.map(async (module) => {
+          if (module.programId) {
+            try {
+              const program = await programsService.getById(module.programId);
+              return { ...module, program: program || undefined };
+            } catch (error) {
+              console.error(`Error loading program for module ${module.id}:`, error);
+              return module;
+            }
+          }
+          return module;
+        })
+      );
+      setModules(modulesWithPrograms);
     } catch (error) {
       console.error('Error loading modules:', error);
     } finally {
@@ -122,6 +160,7 @@ export const ModulesList: FC = () => {
           <TableHead>
             <TableRow>
               <TableCell>Month</TableCell>
+              <TableCell>Program</TableCell>
               <TableCell>Subject</TableCell>
               <TableCell>Instructor</TableCell>
               <TableCell>Start Date</TableCell>
@@ -134,6 +173,22 @@ export const ModulesList: FC = () => {
             {modules.map((module) => (
               <TableRow key={module.id}>
                 <TableCell>Month {module.monthNumber}</TableCell>
+                <TableCell>
+                  {module.program ? (
+                    <Link
+                      component="button"
+                      variant="body2"
+                      onClick={() => navigate(`/programs/${module.program!.id}`)}
+                      sx={{ cursor: 'pointer' }}
+                    >
+                      {module.program.name}
+                    </Link>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Not linked
+                    </Typography>
+                  )}
+                </TableCell>
                 <TableCell>{module.subjectSnapshot || '-'}</TableCell>
                 <TableCell>{module.instructorSnapshot || '-'}</TableCell>
                 <TableCell>{new Date(module.startDate).toLocaleDateString()}</TableCell>

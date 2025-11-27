@@ -1,18 +1,19 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, Chip } from '@mui/material';
+import { Box, Paper, Typography, Button, Chip, Link } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
-import type { Cohort, Student } from '@talendig/shared';
+import type { Cohort, Student, Program } from '@talendig/shared';
 import { LoadingSpinner, PageHeader } from '@talendig/shared';
 import { StudentRoster } from './StudentRoster';
 
 export const CohortDetail: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { cohortsService, studentsService } = useServices();
+  const { cohortsService, studentsService, programsService } = useServices();
   const [cohort, setCohort] = useState<Cohort | null>(null);
   const [students, setStudents] = useState<Student[]>([]);
+  const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,10 +28,22 @@ export const CohortDetail: FC = () => {
     try {
       const data = await cohortsService.getById(id);
       setCohort(data);
+      if (data?.programId) {
+        loadProgram(data.programId);
+      }
     } catch (error) {
       console.error('Error loading cohort:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadProgram = async (programId: string) => {
+    try {
+      const data = await programsService.getById(programId);
+      setProgram(data);
+    } catch (error) {
+      console.error('Error loading program:', error);
     }
   };
 
@@ -94,6 +107,22 @@ export const CohortDetail: FC = () => {
               size="small"
             />
           </Box>
+          {program && (
+            <Box>
+              <Typography variant="body2" color="text.secondary">
+                Linked Program
+              </Typography>
+              <Link
+                component="button"
+                variant="body1"
+                onClick={() => navigate(`/programs/${program.id}`)}
+                sx={{ cursor: 'pointer' }}
+              >
+                {program.name}
+                {program.programType ? ` (${program.programType})` : ''}
+              </Link>
+            </Box>
+          )}
         </Box>
       </Paper>
       <StudentRoster cohortId={cohort.id} students={students} onUpdate={loadStudents} />

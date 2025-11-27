@@ -43,7 +43,12 @@ export const CohortForm: FC<CohortFormProps> = ({
   const loadPrograms = async () => {
     try {
       const data = await programsService.getAll();
-      setPrograms(data);
+      // Filter out programs that are already linked to a cohort
+      // Allow the current cohort's program if editing
+      const availablePrograms = data.filter(
+        (program) => !program.cohortId || (isEdit && program.id === cohort?.programId)
+      );
+      setPrograms(availablePrograms);
     } catch (error) {
       console.error('Error loading programs:', error);
     }
@@ -98,12 +103,17 @@ export const CohortForm: FC<CohortFormProps> = ({
           value={formik.values.programId}
           onChange={formik.handleChange}
           error={formik.touched.programId && Boolean(formik.errors.programId)}
-          helperText={formik.touched.programId && formik.errors.programId}
+          helperText={
+            formik.touched.programId && formik.errors.programId
+              ? formik.errors.programId
+              : 'Programs already linked to other cohorts are excluded'
+          }
           margin="normal"
         >
           {programs.map((program) => (
             <MenuItem key={program.id} value={program.id}>
               {program.name}
+              {program.programType ? ` (${program.programType})` : ''}
             </MenuItem>
           ))}
         </TextField>

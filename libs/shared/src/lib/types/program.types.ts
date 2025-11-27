@@ -7,6 +7,8 @@ export interface Program extends BaseEntity {
   endDate: string;
   durationMonths: number;
   status: Status;
+  cohortId?: string;
+  programType?: string;
 }
 
 export interface CreateProgramInput {
@@ -16,6 +18,8 @@ export interface CreateProgramInput {
   endDate: string;
   durationMonths: number;
   status?: Status;
+  cohortId?: string;
+  programType?: string;
 }
 
 export interface UpdateProgramInput extends Partial<CreateProgramInput> {
