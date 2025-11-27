@@ -16,6 +16,10 @@
     "skipLibCheck": true,
     "strict": true,
     "target": "es2022",
-    "customConditions": ["@talendig-workspace/source"]
+    "baseUrl": ".",
+    "customConditions": ["@talendig-workspace/source"],
+    "paths": {
+      "@talendig/shared": ["libs/shared/src/index.ts"]
+    }
   }
 }

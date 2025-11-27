@@ -1,51 +1,21 @@
-// Uncomment this line to use CSS modules
-// import styles from './app.module.scss';
-import NxWelcome from './nx-welcome';
+import React from 'react';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { talendigTheme, AuthProvider, AuthService, ServicesProvider } from '@talendig/shared';
+import { auth, db } from '../firebase/config';
+import { AppRoutes } from '../routes/AppRoutes';
 
-import { Route, Routes, Link } from 'react-router-dom';
+const authService = new AuthService(auth);
 
 export function App() {
   return (
-    <div>
-      <NxWelcome title="@talendig-workspace/dashboard" />
-
-      {/* START: routes */}
-      {/* These routes and navigation have been generated for you */}
-      {/* Feel free to move and update them to fit your needs */}
-      <br />
-      <hr />
-      <br />
-      <div role="navigation">
-        <ul>
-          <li>
-            <Link to="/">Home</Link>
-          </li>
-          <li>
-            <Link to="/page-2">Page 2</Link>
-          </li>
-        </ul>
-      </div>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <div>
-              This is the generated root route.{' '}
-              <Link to="/page-2">Click here for page 2.</Link>
-            </div>
-          }
-        />
-        <Route
-          path="/page-2"
-          element={
-            <div>
-              <Link to="/">Click here to go back to root page.</Link>
-            </div>
-          }
-        />
-      </Routes>
-      {/* END: routes */}
-    </div>
+    <ThemeProvider theme={talendigTheme}>
+      <CssBaseline />
+      <AuthProvider authService={authService}>
+        <ServicesProvider db={db}>
+          <AppRoutes />
+        </ServicesProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

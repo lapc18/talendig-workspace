@@ -1,0 +1,239 @@
+# GridPI UI Platform - Cursor AI Rules
+
+This file contains guidelines for AI assistance in the GridPI UI Platform codebase.
+
+## Project Context
+
+- **Monorepo**: Nx workspace with multiple React applications
+- **Framework**: React 18.3.1 with TypeScript 5.4.2
+- **Build Tool**: Vite 5.0.0
+- **UI Library**: Material-UI (MUI) 5.15.19
+- **Styling**: SCSS modules + Emotion (MUI styled)
+- **Testing**: Jest + Vitest
+- **Routing**: React Router 6.11.2
+- **Forms**: Formik + Yup
+- **Backend**: Firebase 10.12.2
+
+## Code Style & Standards
+
+### TypeScript
+- Always use explicit types, avoid `any`
+- Use interfaces for object shapes, types for unions/intersections
+- Props interfaces should be named `ComponentNameProps`
+- Export types alongside implementations
+- Use `FC` type for React components: `const Component: FC<Props> = () => {}`
+- Prefer `import type` for type-only imports
+
+### Naming Conventions
+- **Components**: PascalCase (`Button`, `ProductCard`)
+- **Files**: Match component name (`Button.tsx`, `useDebounce.ts`)
+- **Variables/Functions**: camelCase (`userName`, `handleClick`)
+- **Constants**: UPPER_SNAKE_CASE (`MAX_RETRIES`, `API_BASE_URL`)
+- **Boolean variables**: Use prefixes (`isVisible`, `hasPermission`, `shouldRender`)
+
+### File Organization
+- Co-locate related files (component, styles, tests, index)
+- Use index.ts for clean exports
+- Group imports: React → Third-party → Internal → Relative → Types
+
+### Component Structure
+```
+ComponentName/
+├── ComponentName.tsx
+├── ComponentName.spec.tsx (optional)
+├── style.ts (Emotion styled)
+├── ComponentName.module.scss (if using SCSS)
+└── index.ts
+```
+
+## Component Guidelines
+
+### Component Patterns
+- Use functional components with hooks
+- Define props with TypeScript interfaces
+- Use default parameters instead of defaultProps
+- Prefer composition over configuration
+- Extract logic into custom hooks when reusable
+
+### Styling
+- **Preferred**: MUI `styled` API for component styling
+- **Alternative**: SCSS modules for complex styles
+- Always use theme values (spacing, colors, typography)
+- Use responsive breakpoints: `theme.breakpoints.up('md')`
+- Avoid inline styles except for dynamic values
+
+### Example Component
+```typescript
+import React, { FC } from 'react';
+import { styled } from '@mui/material';
+import type { ButtonProps } from './Button.types';
+
+export type ButtonProps = {
+  label: string;
+  onClick: () => void;
+  variant?: 'primary' | 'secondary';
+  disabled?: boolean;
+};
+
+const StyledButton = styled('button')<ButtonProps>(({ theme, variant }) => ({
+  padding: theme.spacing(1, 2),
+  backgroundColor: variant === 'primary' 
+    ? theme.palette.primary.main 
+    : theme.palette.secondary.main,
+}));
+
+export const Button: FC<ButtonProps> = ({
+  label,
+  onClick,
+  variant = 'primary',
+  disabled = false,
+}) => {
+  return (
+    <StyledButton variant={variant} onClick={onClick} disabled={disabled}>
+      {label}
+    </StyledButton>
+  );
+};
+```
+
+## Import Paths
+
+### Use TypeScript Path Aliases
+```typescript
+// ✅ Good
+import { Button } from '@gridpi-ui-platform/shared';
+import { useDebounce } from '@gridpi-ui-platform/shared';
+
+// ❌ Bad
+import { Button } from '../../../../libs/shared/src/lib/components/Button';
+```
+
+## State Management
+
+- **Local State**: `useState` for simple state
+- **Complex State**: `useReducer` for multiple related values
+- **Global State**: Context API (ThemeProvider pattern)
+- **Server State**: Axios for API, Firebase for real-time
+- **URL State**: React Router for shareable state
+
+## Error Handling
+
+- Always handle errors in async operations
+- Use try-catch for error boundaries
+- Provide user-friendly error messages
+- Use optional chaining: `user?.name ?? 'Guest'`
+
+## Testing
+
+- Write tests for components, hooks, and utilities
+- Use React Testing Library with semantic queries
+- Test user behavior, not implementation details
+- Co-locate test files: `ComponentName.spec.tsx`
+- Target: >80% coverage for critical code
+
+## Git & Commits
+
+- Follow Conventional Commits: `feat:`, `fix:`, `docs:`, etc.
+- Use descriptive commit messages
+- Keep commits focused and atomic
+- Branch naming: `feature/`, `bugfix/`, `hotfix/`
+
+## Code Quality
+
+### Do's
+- ✅ Write self-documenting code
+- ✅ Keep functions small and focused
+- ✅ Use meaningful variable names
+- ✅ Handle edge cases and errors
+- ✅ Write testable code
+- ✅ Remove dead code and unused imports
+
+### Don'ts
+- ❌ Use `any` type
+- ❌ Leave console.logs in production code
+- ❌ Comment obvious code
+- ❌ Create deeply nested components
+- ❌ Mix concerns (logic + presentation)
+
+## Performance
+
+- Use `React.memo` for expensive components with stable props
+- Use `useMemo`/`useCallback` judiciously (only when needed)
+- Implement lazy loading for routes: `React.lazy()`
+- Optimize images and assets
+
+## Accessibility
+
+- Use semantic HTML elements
+- Include ARIA attributes where needed
+- Ensure keyboard navigation works
+- Test with screen readers
+
+## Documentation
+
+- Document complex logic and algorithms
+- Add JSDoc comments for public APIs
+- Keep README files updated
+- Document architectural decisions
+
+## When Creating New Code
+
+1. **Check existing patterns**: Look for similar components/utilities
+2. **Follow project structure**: Place files in appropriate directories
+3. **Use shared libraries**: Import from `@gridpi-ui-platform/shared` when possible
+4. **Write tests**: Include tests for new functionality
+5. **Update documentation**: Add to relevant docs if needed
+6. **Follow naming conventions**: Consistent with existing codebase
+
+## Common Patterns
+
+### Custom Hooks
+```typescript
+export const useProduct = (productId: string) => {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchProduct(productId)
+      .then(setProduct)
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [productId]);
+
+  return { product, loading, error };
+};
+```
+
+### API Calls
+```typescript
+const fetchData = async () => {
+  try {
+    const response = await axios.get('/api/data');
+    return response.data;
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+    throw error;
+  }
+};
+```
+
+## Project-Specific Notes
+
+- **Apps**: `apps/gridpi-ui-platform`, `apps/minimarket`
+- **Shared Library**: `libs/shared` - reusable components, hooks, utils
+- **Theme**: Centralized in `libs/shared/src/lib/configuration/theme.ts`
+- **Firebase**: Configured per application in `src/firebaseConfig.ts`
+- **Build Configs**: `development` and `production` configurations
+
+## AI Assistant Guidelines
+
+When helping with this codebase:
+1. Always follow the established patterns and conventions
+2. Suggest improvements that align with project standards
+3. Point out when code doesn't follow guidelines
+4. Prefer existing shared components over creating new ones
+5. Consider performance and accessibility implications
+6. Suggest tests for new functionality
+7. Maintain consistency with existing code style
+
