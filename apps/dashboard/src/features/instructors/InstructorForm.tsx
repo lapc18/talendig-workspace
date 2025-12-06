@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import { FC, useState } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -58,7 +58,6 @@ export const InstructorForm: FC<InstructorFormProps> = ({
   const [cvUrl, setCvUrl] = useState<string | undefined>(instructor?.cvUrl);
   const [cvPath, setCvPath] = useState<string | undefined>(instructor?.cvStoragePath);
   const isEdit = !!instructor;
-  const instructorId = instructor?.id || 'new';
 
   const formik = useFormik<CreateInstructorInput & { technologies: string[] }>({
     initialValues: {

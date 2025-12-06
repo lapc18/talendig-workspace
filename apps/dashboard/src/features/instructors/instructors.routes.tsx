@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react';
+import { FC, useState } from 'react';
 import { Box, Button } from '@mui/material';
 import { Add as AddIcon } from '@mui/icons-material';
 import { PageHeader } from '@talendig/shared';
