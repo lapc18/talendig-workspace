@@ -12,7 +12,7 @@ import {
   Link,
   Typography,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Block as BlockIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
 import type { Cohort, Program } from '@talendig/shared';
 import { LoadingSpinner } from '@talendig/shared';
@@ -36,9 +36,11 @@ export const CohortsList: FC = () => {
     try {
       setLoading(true);
       const data = await cohortsService.getAll();
+      // Filter out inactive cohorts
+      const activeCohorts = data.filter((cohort) => cohort.status === 'active');
       // Load program information for each cohort
       const cohortsWithPrograms = await Promise.all(
-        data.map(async (cohort) => {
+        activeCohorts.map(async (cohort) => {
           if (cohort.programId) {
             try {
               const program = await programsService.getById(cohort.programId);
@@ -56,6 +58,17 @@ export const CohortsList: FC = () => {
       console.error('Error loading cohorts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeactivate = async (id: string) => {
+    if (window.confirm('Are you sure you want to deactivate this cohort?')) {
+      try {
+        await cohortsService.deactivate(id);
+        loadCohorts();
+      } catch (error) {
+        console.error('Error deactivating cohort:', error);
+      }
     }
   };
 
@@ -89,7 +102,7 @@ export const CohortsList: FC = () => {
                     sx={{ cursor: 'pointer' }}
                   >
                     {cohort.program.name}
-                    {cohort.program.programType ? ` (${cohort.program.programType})` : ''}
+                    {cohort.program.type ? ` (${cohort.program.type})` : ''}
                   </Link>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
@@ -113,11 +126,11 @@ export const CohortsList: FC = () => {
                 >
                   <ViewIcon />
                 </IconButton>
-                <IconButton size="small" onClick={() => console.log('Edit', cohort.id)}>
+                <IconButton size="small" onClick={() => navigate(`/cohorts/${cohort.id}/edit`)}>
                   <EditIcon />
                 </IconButton>
-                <IconButton size="small" onClick={() => console.log('Delete', cohort.id)}>
-                  <DeleteIcon />
+                <IconButton size="small" onClick={() => handleDeactivate(cohort.id)}>
+                  <BlockIcon />
                 </IconButton>
               </TableCell>
             </TableRow>

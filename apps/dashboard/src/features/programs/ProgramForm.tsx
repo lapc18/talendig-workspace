@@ -1,4 +1,4 @@
-import { FC, useEffect, useState, useCallback } from 'react';
+import { FC } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -8,11 +8,9 @@ import {
   MenuItem,
   Paper,
   Typography,
-  Alert,
 } from '@mui/material';
 import { useServices } from '@talendig/shared';
-import type { Program, CreateProgramInput, Cohort } from '@talendig/shared';
-import { addMonths, format } from 'date-fns';
+import type { Program, CreateProgramInput } from '@talendig/shared';
 
 interface ProgramFormProps {
   program?: Program;
@@ -23,8 +21,7 @@ interface ProgramFormProps {
 const validationSchema = yup.object({
   name: yup.string().required('Name is required'),
   description: yup.string().required('Description is required'),
-  startDate: yup.date().required('Start date is required'),
-  endDate: yup.date().required('End date is required'),
+  type: yup.string().required('Type is required'),
   durationMonths: yup
     .number()
     .required('Duration is required')
@@ -32,8 +29,6 @@ const validationSchema = yup.object({
     .max(12, 'Must be at most 12 months')
     .integer('Must be a whole number'),
   status: yup.string().oneOf(['active', 'inactive']).required('Status is required'),
-  programType: yup.string(),
-  cohortId: yup.string(),
 });
 
 export const ProgramForm: FC<ProgramFormProps> = ({
@@ -41,37 +36,16 @@ export const ProgramForm: FC<ProgramFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { programsService, modulesService, cohortsService } = useServices();
+  const { programsService, modulesService } = useServices();
   const isEdit = !!program;
-  const [linkedCohort, setLinkedCohort] = useState<Cohort | null>(null);
-  const hasLinkedCohort = !!program?.cohortId;
-
-  const loadLinkedCohort = useCallback(async () => {
-    if (!program?.cohortId) return;
-    try {
-      const cohort = await cohortsService.getById(program.cohortId);
-      setLinkedCohort(cohort);
-    } catch (error) {
-      console.error('Error loading linked cohort:', error);
-    }
-  }, [program?.cohortId, cohortsService]);
-
-  useEffect(() => {
-    if (program?.cohortId) {
-      loadLinkedCohort();
-    }
-  }, [program?.cohortId, loadLinkedCohort]);
 
   const formik = useFormik<CreateProgramInput>({
     initialValues: {
       name: program?.name || '',
       description: program?.description || '',
-      startDate: program?.startDate || format(new Date(), 'yyyy-MM-dd'),
-      endDate: program?.endDate || format(addMonths(new Date(), 10), 'yyyy-MM-dd'),
+      type: program?.type || '',
       durationMonths: program?.durationMonths || 10,
       status: program?.status || 'active',
-      programType: program?.programType || '',
-      cohortId: program?.cohortId || undefined,
     },
     validationSchema,
     onSubmit: async (values) => {
@@ -80,8 +54,8 @@ export const ProgramForm: FC<ProgramFormProps> = ({
           await programsService.update({ id: program.id, ...values });
         } else {
           const newProgram = await programsService.create(values);
-          // Auto-generate 10 modules
-          await generateModules(newProgram.id, values.startDate, values.durationMonths);
+          // Auto-generate modules based on duration
+          await generateModules(newProgram.id, values.durationMonths);
         }
         onSuccess();
       } catch (error) {
@@ -90,26 +64,12 @@ export const ProgramForm: FC<ProgramFormProps> = ({
     },
   });
 
-  const generateModules = async (
-    programId: string,
-    startDate: string,
-    durationMonths: number
-  ) => {
-    const start = new Date(startDate);
+  const generateModules = async (programId: string, durationMonths: number) => {
     for (let i = 0; i < durationMonths; i++) {
-      const moduleStart = addMonths(start, i);
-      const moduleEnd = addMonths(moduleStart, 1);
-      
       await modulesService.create({
         programId,
-        subjectId: '', // Will be assigned later
-        instructorId: '', // Will be assigned later
-        subjectSnapshot: '',
-        instructorSnapshot: '',
-        startDate: format(moduleStart, 'yyyy-MM-dd'),
-        endDate: format(moduleEnd, 'yyyy-MM-dd'),
+        month: i + 1,
         hours: 24, // Default hours
-        monthNumber: i + 1,
       });
     }
   };
@@ -119,27 +79,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
       <Typography variant="h6" gutterBottom>
         {isEdit ? 'Edit Program' : 'Create Program'}
       </Typography>
-      {hasLinkedCohort && linkedCohort && (
-        <Alert severity="info" sx={{ mb: 2 }}>
-          This program is linked to cohort: <strong>{linkedCohort.name}</strong>
-        </Alert>
-      )}
       <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2 }}>
-        <TextField
-          fullWidth
-          id="programType"
-          name="programType"
-          label="Program Type"
-          value={formik.values.programType}
-          onChange={formik.handleChange}
-          error={formik.touched.programType && Boolean(formik.errors.programType)}
-          helperText={
-            formik.touched.programType && formik.errors.programType
-              ? formik.errors.programType
-              : 'Template/type identifier (e.g., "Full-Stack Developer Program")'
-          }
-          margin="normal"
-        />
         <TextField
           fullWidth
           id="name"
@@ -166,33 +106,14 @@ export const ProgramForm: FC<ProgramFormProps> = ({
         />
         <TextField
           fullWidth
-          id="startDate"
-          name="startDate"
-          label="Start Date"
-          type="date"
-          value={formik.values.startDate}
+          id="type"
+          name="type"
+          label="Type"
+          value={formik.values.type}
           onChange={formik.handleChange}
-          error={formik.touched.startDate && Boolean(formik.errors.startDate)}
-          helperText={formik.touched.startDate && formik.errors.startDate}
+          error={formik.touched.type && Boolean(formik.errors.type)}
+          helperText={formik.touched.type && formik.errors.type}
           margin="normal"
-          InputLabelProps={{
-            shrink: true,
-          }}
-        />
-        <TextField
-          fullWidth
-          id="endDate"
-          name="endDate"
-          label="End Date"
-          type="date"
-          value={formik.values.endDate}
-          onChange={formik.handleChange}
-          error={formik.touched.endDate && Boolean(formik.errors.endDate)}
-          helperText={formik.touched.endDate && formik.errors.endDate}
-          margin="normal"
-          InputLabelProps={{
-            shrink: true,
-          }}
         />
         <TextField
           fullWidth
@@ -221,18 +142,6 @@ export const ProgramForm: FC<ProgramFormProps> = ({
           <MenuItem value="active">Active</MenuItem>
           <MenuItem value="inactive">Inactive</MenuItem>
         </TextField>
-        {hasLinkedCohort && (
-          <TextField
-            fullWidth
-            id="cohortId"
-            name="cohortId"
-            label="Linked Cohort"
-            value={linkedCohort?.name || program?.cohortId || ''}
-            disabled
-            helperText="This program is linked to a cohort. The link is managed through the cohort."
-            margin="normal"
-          />
-        )}
         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={onCancel}>
             Cancel

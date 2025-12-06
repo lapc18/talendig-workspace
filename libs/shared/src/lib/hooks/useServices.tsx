@@ -4,6 +4,7 @@ import {
   ProgramsService,
   ModulesService,
   CohortsService,
+  CohortModuleAssignmentsService,
   StudentsService,
   SubjectsService,
   InstructorsService,
@@ -13,6 +14,7 @@ interface ServicesContextType {
   programsService: ProgramsService;
   modulesService: ModulesService;
   cohortsService: CohortsService;
+  cohortModuleAssignmentsService: CohortModuleAssignmentsService;
   studentsService: StudentsService;
   subjectsService: SubjectsService;
   instructorsService: InstructorsService;
@@ -30,6 +32,7 @@ export const ServicesProvider: React.FC<{
     programsService: new ProgramsService(db),
     modulesService: new ModulesService(db),
     cohortsService: new CohortsService(db),
+    cohortModuleAssignmentsService: new CohortModuleAssignmentsService(db),
     studentsService: new StudentsService(db),
     subjectsService: new SubjectsService(db),
     instructorsService: new InstructorsService(db),

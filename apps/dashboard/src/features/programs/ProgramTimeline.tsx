@@ -29,24 +29,10 @@ export const ProgramTimeline: FC<ProgramTimelineProps> = ({ modules }) => {
             >
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="subtitle1">
-                  Month {module.monthNumber}
+                  Month {module.month}
                 </Typography>
                 <Chip label={`${module.hours}h`} size="small" />
               </Box>
-              <Typography variant="body2" color="text.secondary">
-                {new Date(module.startDate).toLocaleDateString()} -{' '}
-                {new Date(module.endDate).toLocaleDateString()}
-              </Typography>
-              {module.subjectSnapshot && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Subject: {module.subjectSnapshot}
-                </Typography>
-              )}
-              {module.instructorSnapshot && (
-                <Typography variant="body2" color="text.secondary">
-                  Instructor: {module.instructorSnapshot}
-                </Typography>
-              )}
             </Box>
           ))
         )}

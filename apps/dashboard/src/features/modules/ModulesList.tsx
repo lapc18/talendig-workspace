@@ -161,10 +161,6 @@ export const ModulesList: FC = () => {
             <TableRow>
               <TableCell>Month</TableCell>
               <TableCell>Program</TableCell>
-              <TableCell>Subject</TableCell>
-              <TableCell>Instructor</TableCell>
-              <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
               <TableCell>Hours</TableCell>
               <TableCell>Actions</TableCell>
             </TableRow>
@@ -172,7 +168,7 @@ export const ModulesList: FC = () => {
           <TableBody>
             {modules.map((module) => (
               <TableRow key={module.id}>
-                <TableCell>Month {module.monthNumber}</TableCell>
+                <TableCell>Month {module.month}</TableCell>
                 <TableCell>
                   {module.program ? (
                     <Link
@@ -189,10 +185,6 @@ export const ModulesList: FC = () => {
                     </Typography>
                   )}
                 </TableCell>
-                <TableCell>{module.subjectSnapshot || '-'}</TableCell>
-                <TableCell>{module.instructorSnapshot || '-'}</TableCell>
-                <TableCell>{new Date(module.startDate).toLocaleDateString()}</TableCell>
-                <TableCell>{new Date(module.endDate).toLocaleDateString()}</TableCell>
                 <TableCell>{module.hours}h</TableCell>
                 <TableCell>
                   <IconButton size="small" onClick={() => handleEditClick(module)}>

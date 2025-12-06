@@ -23,7 +23,7 @@ export class ModulesService {
   async getByProgramId(programId: string): Promise<Module[]> {
     return this.firestoreService.query<Module>(COLLECTION_NAME, [
       firestoreHelpers.where('programId', '==', programId),
-      firestoreHelpers.orderBy('monthNumber', 'asc'),
+      firestoreHelpers.orderBy('month', 'asc'),
     ]);
   }
 
@@ -36,8 +36,10 @@ export class ModulesService {
     return this.firestoreService.update<Module>(COLLECTION_NAME, id, data);
   }
 
-  async delete(id: string): Promise<void> {
-    return this.firestoreService.delete(COLLECTION_NAME, id);
+  async deactivate(id: string): Promise<void> {
+    return this.firestoreService.update<Module>(COLLECTION_NAME, id, {
+      status: 'inactive',
+    });
   }
 }
 

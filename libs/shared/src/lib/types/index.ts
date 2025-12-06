@@ -2,6 +2,7 @@ export * from './common.types';
 export * from './program.types';
 export * from './module.types';
 export * from './cohort.types';
+export * from './cohort-module-assignment.types';
 export * from './student.types';
 export * from './subject.types';
 export * from './instructor.types';

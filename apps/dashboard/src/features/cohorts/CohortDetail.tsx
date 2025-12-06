@@ -6,6 +6,7 @@ import { useServices } from '@talendig/shared';
 import type { Cohort, Student, Program } from '@talendig/shared';
 import { LoadingSpinner, PageHeader } from '@talendig/shared';
 import { StudentRoster } from './StudentRoster';
+import { CohortModuleAssignments } from './components/CohortModuleAssignments';
 
 export const CohortDetail: FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -119,13 +120,18 @@ export const CohortDetail: FC = () => {
                 sx={{ cursor: 'pointer' }}
               >
                 {program.name}
-                {program.programType ? ` (${program.programType})` : ''}
+                {program.type ? ` (${program.type})` : ''}
               </Link>
             </Box>
           )}
         </Box>
       </Paper>
-      <StudentRoster cohortId={cohort.id} students={students} onUpdate={loadStudents} />
+      {program && (
+        <CohortModuleAssignments cohortId={cohort.id} programId={program.id} />
+      )}
+      <Box sx={{ mt: 3 }}>
+        <StudentRoster cohortId={cohort.id} students={students} onUpdate={loadStudents} />
+      </Box>
     </Box>
   );
 };

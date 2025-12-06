@@ -12,20 +12,16 @@ import {
   Link,
   Typography,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
+import { Edit as EditIcon, Block as BlockIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
-import type { Program, Cohort } from '@talendig/shared';
+import type { Program } from '@talendig/shared';
 import { LoadingSpinner } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 
-interface ProgramWithCohort extends Program {
-  cohort?: Cohort;
-}
-
 export const ProgramsList: FC = () => {
-  const { programsService, cohortsService } = useServices();
+  const { programsService } = useServices();
   const navigate = useNavigate();
-  const [programs, setPrograms] = useState<ProgramWithCohort[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,26 +32,24 @@ export const ProgramsList: FC = () => {
     try {
       setLoading(true);
       const data = await programsService.getAll();
-      // Load cohort information for each program
-      const programsWithCohorts = await Promise.all(
-        data.map(async (program) => {
-          if (program.cohortId) {
-            try {
-              const cohort = await cohortsService.getById(program.cohortId);
-              return { ...program, cohort: cohort || undefined };
-            } catch (error) {
-              console.error(`Error loading cohort for program ${program.id}:`, error);
-              return program;
-            }
-          }
-          return program;
-        })
-      );
-      setPrograms(programsWithCohorts);
+      // Filter out inactive programs
+      const activePrograms = data.filter((program) => program.status === 'active');
+      setPrograms(activePrograms);
     } catch (error) {
       console.error('Error loading programs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeactivate = async (id: string) => {
+    if (window.confirm('Are you sure you want to deactivate this program?')) {
+      try {
+        await programsService.deactivate(id);
+        loadPrograms();
+      } catch (error) {
+        console.error('Error deactivating program:', error);
+      }
     }
   };
 
@@ -70,9 +64,6 @@ export const ProgramsList: FC = () => {
           <TableRow>
             <TableCell>Name</TableCell>
             <TableCell>Type</TableCell>
-            <TableCell>Cohort</TableCell>
-            <TableCell>Start Date</TableCell>
-            <TableCell>End Date</TableCell>
             <TableCell>Duration (Months)</TableCell>
             <TableCell>Status</TableCell>
             <TableCell>Actions</TableCell>
@@ -83,32 +74,14 @@ export const ProgramsList: FC = () => {
             <TableRow key={program.id}>
               <TableCell>{program.name}</TableCell>
               <TableCell>
-                {program.programType ? (
-                  <Typography variant="body2">{program.programType}</Typography>
+                {program.type ? (
+                  <Typography variant="body2">{program.type}</Typography>
                 ) : (
                   <Typography variant="body2" color="text.secondary">
                     -
                   </Typography>
                 )}
               </TableCell>
-              <TableCell>
-                {program.cohort ? (
-                  <Link
-                    component="button"
-                    variant="body2"
-                    onClick={() => navigate(`/cohorts/${program.cohort!.id}`)}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    {program.cohort.name}
-                  </Link>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Not linked
-                  </Typography>
-                )}
-              </TableCell>
-              <TableCell>{new Date(program.startDate).toLocaleDateString()}</TableCell>
-              <TableCell>{new Date(program.endDate).toLocaleDateString()}</TableCell>
               <TableCell>{program.durationMonths}</TableCell>
               <TableCell>
                 <Chip
@@ -124,11 +97,11 @@ export const ProgramsList: FC = () => {
                 >
                   <ViewIcon />
                 </IconButton>
-                <IconButton size="small" onClick={() => console.log('Edit', program.id)}>
+                <IconButton size="small" onClick={() => navigate(`/programs/${program.id}/edit`)}>
                   <EditIcon />
                 </IconButton>
-                <IconButton size="small" onClick={() => console.log('Delete', program.id)}>
-                  <DeleteIcon />
+                <IconButton size="small" onClick={() => handleDeactivate(program.id)}>
+                  <BlockIcon />
                 </IconButton>
               </TableCell>
             </TableRow>

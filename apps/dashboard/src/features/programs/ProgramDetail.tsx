@@ -1,19 +1,18 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, Chip, Link } from '@mui/material';
+import { Box, Paper, Typography, Button, Chip } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
-import type { Program, Module, Cohort } from '@talendig/shared';
+import type { Program, Module } from '@talendig/shared';
 import { LoadingSpinner, PageHeader } from '@talendig/shared';
 import { ProgramTimeline } from './ProgramTimeline';
 
 export const ProgramDetail: FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { programsService, modulesService, cohortsService } = useServices();
+  const { programsService, modulesService } = useServices();
   const [program, setProgram] = useState<Program | null>(null);
   const [modules, setModules] = useState<Module[]>([]);
-  const [cohort, setCohort] = useState<Cohort | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -28,22 +27,10 @@ export const ProgramDetail: FC = () => {
     try {
       const data = await programsService.getById(id);
       setProgram(data);
-      if (data?.cohortId) {
-        loadCohort(data.cohortId);
-      }
     } catch (error) {
       console.error('Error loading program:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadCohort = async (cohortId: string) => {
-    try {
-      const data = await cohortsService.getById(cohortId);
-      setCohort(data);
-    } catch (error) {
-      console.error('Error loading cohort:', error);
     }
   };
 
@@ -85,25 +72,11 @@ export const ProgramDetail: FC = () => {
           Program Details
         </Typography>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
-          {program.programType && (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Program Type
-              </Typography>
-              <Typography>{program.programType}</Typography>
-            </Box>
-          )}
           <Box>
             <Typography variant="body2" color="text.secondary">
-              Start Date
+              Type
             </Typography>
-            <Typography>{new Date(program.startDate).toLocaleDateString()}</Typography>
-          </Box>
-          <Box>
-            <Typography variant="body2" color="text.secondary">
-              End Date
-            </Typography>
-            <Typography>{new Date(program.endDate).toLocaleDateString()}</Typography>
+            <Typography>{program.type}</Typography>
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">
@@ -121,21 +94,6 @@ export const ProgramDetail: FC = () => {
               size="small"
             />
           </Box>
-          {cohort && (
-            <Box>
-              <Typography variant="body2" color="text.secondary">
-                Linked Cohort
-              </Typography>
-              <Link
-                component="button"
-                variant="body1"
-                onClick={() => navigate(`/cohorts/${cohort.id}`)}
-                sx={{ cursor: 'pointer' }}
-              >
-                {cohort.name}
-              </Link>
-            </Box>
-          )}
         </Box>
       </Paper>
       <ProgramTimeline modules={modules} />
