@@ -1,31 +1,20 @@
 import React, { FC, useEffect, useState } from 'react';
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Chip,
-  Link,
-  Typography,
-} from '@mui/material';
+import { Box, Grid, IconButton, Typography } from '@mui/material';
 import { Edit as EditIcon, Block as BlockIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useServices } from '@talendig/shared';
-import type { Cohort, Program } from '@talendig/shared';
-import { LoadingSpinner } from '@talendig/shared';
+import { useServices, LoadingSpinner, EntityCard } from '@talendig/shared';
+import type { Cohort, Program, Student } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 
-interface CohortWithProgram extends Cohort {
+interface CohortWithDetails extends Cohort {
   program?: Program;
+  studentsCount: number;
 }
 
 export const CohortsList: FC = () => {
-  const { cohortsService, programsService } = useServices();
+  const { cohortsService, programsService, studentsService } = useServices();
   const navigate = useNavigate();
-  const [cohorts, setCohorts] = useState<CohortWithProgram[]>([]);
+  const [cohorts, setCohorts] = useState<CohortWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,24 +25,26 @@ export const CohortsList: FC = () => {
     try {
       setLoading(true);
       const data = await cohortsService.getAll();
-      // Filter out inactive cohorts
       const activeCohorts = data.filter((cohort) => cohort.status === 'active');
-      // Load program information for each cohort
-      const cohortsWithPrograms = await Promise.all(
+      
+      const cohortsWithDetails = await Promise.all(
         activeCohorts.map(async (cohort) => {
-          if (cohort.programId) {
-            try {
-              const program = await programsService.getById(cohort.programId);
-              return { ...cohort, program: program || undefined };
-            } catch (error) {
-              console.error(`Error loading program for cohort ${cohort.id}:`, error);
-              return cohort;
-            }
-          }
-          return cohort;
+          const [program, students] = await Promise.all([
+            cohort.programId
+              ? programsService.getById(cohort.programId).catch(() => null)
+              : Promise.resolve(null),
+            studentsService.getByCohortId(cohort.id).catch(() => []),
+          ]);
+          
+          return {
+            ...cohort,
+            program: program || undefined,
+            studentsCount: students.length,
+          };
         })
       );
-      setCohorts(cohortsWithPrograms);
+      
+      setCohorts(cohortsWithDetails);
     } catch (error) {
       console.error('Error loading cohorts:', error);
     } finally {
@@ -61,7 +52,8 @@ export const CohortsList: FC = () => {
     }
   };
 
-  const handleDeactivate = async (id: string) => {
+  const handleDeactivate = async (id: string, event: React.MouseEvent) => {
+    event.stopPropagation();
     if (window.confirm('Are you sure you want to deactivate this cohort?')) {
       try {
         await cohortsService.deactivate(id);
@@ -77,67 +69,85 @@ export const CohortsList: FC = () => {
   }
 
   return (
-    <TableContainer component={Paper}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Program</TableCell>
-            <TableCell>Start Date</TableCell>
-            <TableCell>End Date</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {cohorts.map((cohort) => (
-            <TableRow key={cohort.id}>
-              <TableCell>{cohort.name}</TableCell>
-              <TableCell>
-                {cohort.program ? (
-                  <Link
-                    component="button"
-                    variant="body2"
-                    onClick={() => navigate(`/programs/${cohort.program!.id}`)}
-                    sx={{ cursor: 'pointer' }}
+    <Box>
+      <Grid container spacing={3}>
+        {cohorts.map((cohort) => (
+          <Grid item xs={12} sm={6} md={4} key={cohort.id}>
+            <EntityCard
+              title={cohort.name}
+              subtitle={cohort.program?.name}
+              status={cohort.status}
+              statusPosition="right"
+              onClick={() => navigate(`/cohorts/${cohort.id}`)}
+              actions={
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/cohorts/${cohort.id}`);
+                    }}
                   >
-                    {cohort.program.name}
-                    {cohort.program.type ? ` (${cohort.program.type})` : ''}
-                  </Link>
-                ) : (
+                    <ViewIcon />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/cohorts/${cohort.id}/edit`);
+                    }}
+                  >
+                    <EditIcon />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => handleDeactivate(cohort.id, e)}
+                  >
+                    <BlockIcon />
+                  </IconButton>
+                </Box>
+              }
+            >
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                {cohort.program && (
                   <Typography variant="body2" color="text.secondary">
-                    No program
+                    Program:{' '}
+                    <Typography
+                      component="span"
+                      variant="body2"
+                      sx={{ fontWeight: 500, cursor: 'pointer' }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/programs/${cohort.program!.id}`);
+                      }}
+                    >
+                      {cohort.program.name}
+                      {cohort.program.type ? ` (${cohort.program.type})` : ''}
+                    </Typography>
                   </Typography>
                 )}
-              </TableCell>
-              <TableCell>{new Date(cohort.startDate).toLocaleDateString()}</TableCell>
-              <TableCell>{new Date(cohort.endDate).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <Chip
-                  label={cohort.status}
-                  color={cohort.status === 'active' ? 'success' : 'default'}
-                  size="small"
-                />
-              </TableCell>
-              <TableCell>
-                <IconButton
-                  size="small"
-                  onClick={() => navigate(`/cohorts/${cohort.id}`)}
-                >
-                  <ViewIcon />
-                </IconButton>
-                <IconButton size="small" onClick={() => navigate(`/cohorts/${cohort.id}/edit`)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton size="small" onClick={() => handleDeactivate(cohort.id)}>
-                  <BlockIcon />
-                </IconButton>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+                <Typography variant="body2" color="text.secondary">
+                  Students: <strong>{cohort.studentsCount}</strong>
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Start: <strong>{format(new Date(cohort.startDate), 'MMM dd, yyyy')}</strong>
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  End: <strong>{format(new Date(cohort.endDate), 'MMM dd, yyyy')}</strong>
+                </Typography>
+              </Box>
+            </EntityCard>
+          </Grid>
+        ))}
+      </Grid>
+      {cohorts.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 4 }}>
+          <Typography variant="body1" color="text.secondary">
+            No cohorts found
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 };
 

@@ -86,6 +86,12 @@ export const ProgramDetail: FC = () => {
           </Box>
           <Box>
             <Typography variant="body2" color="text.secondary">
+              Modules
+            </Typography>
+            <Typography>{modules.length} modules</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
               Status
             </Typography>
             <Chip

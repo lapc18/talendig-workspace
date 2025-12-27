@@ -189,15 +189,13 @@ export const InstructorForm: FC<InstructorFormProps> = ({
           <MenuItem value="active">Active</MenuItem>
           <MenuItem value="inactive">Inactive</MenuItem>
         </TextField>
-        {isEdit && (
-          <Box sx={{ mt: 2 }}>
-            <CVUpload
-              instructorId={instructor.id}
-              onUploadComplete={handleCVUpload}
-              existingUrl={cvUrl}
-            />
-          </Box>
-        )}
+        <Box sx={{ mt: 2 }}>
+          <CVUpload
+            instructorId={instructor?.id || ''}
+            onUploadComplete={handleCVUpload}
+            existingUrl={cvUrl}
+          />
+        </Box>
         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={onCancel}>
             Cancel

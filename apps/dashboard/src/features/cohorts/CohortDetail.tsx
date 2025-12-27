@@ -88,6 +88,12 @@ export const CohortDetail: FC = () => {
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', mt: 2 }}>
           <Box>
             <Typography variant="body2" color="text.secondary">
+              Students
+            </Typography>
+            <Typography variant="h6">{students.length} students</Typography>
+          </Box>
+          <Box>
+            <Typography variant="body2" color="text.secondary">
               Start Date
             </Typography>
             <Typography>{new Date(cohort.startDate).toLocaleDateString()}</Typography>

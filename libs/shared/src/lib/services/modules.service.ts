@@ -27,8 +27,23 @@ export class ModulesService {
     ]);
   }
 
+  async getByInstructorId(instructorId: string): Promise<Module[]> {
+    return this.firestoreService.query<Module>(COLLECTION_NAME, [
+      firestoreHelpers.where('instructorId', '==', instructorId),
+      firestoreHelpers.orderBy('month', 'asc'),
+    ]);
+  }
+
+  async hasModulesForProgram(programId: string): Promise<boolean> {
+    const modules = await this.getByProgramId(programId);
+    return modules.length > 0;
+  }
+
   async create(input: CreateModuleInput): Promise<Module> {
-    return this.firestoreService.create<Module>(COLLECTION_NAME, input);
+    return this.firestoreService.create<Module>(COLLECTION_NAME, {
+      ...input,
+      status: input.status || 'active',
+    });
   }
 
   async update(input: UpdateModuleInput): Promise<void> {
@@ -40,6 +55,10 @@ export class ModulesService {
     return this.firestoreService.update<Module>(COLLECTION_NAME, id, {
       status: 'inactive',
     });
+  }
+
+  async delete(id: string): Promise<void> {
+    return this.firestoreService.delete(COLLECTION_NAME, id);
   }
 }
 

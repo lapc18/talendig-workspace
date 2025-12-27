@@ -1,4 +1,4 @@
-import React, { FC, useEffect } from 'react';
+import React, { FC, useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -8,9 +8,13 @@ import {
   MenuItem,
   Paper,
   Typography,
+  Divider,
+  Chip,
+  Alert,
 } from '@mui/material';
 import { useServices } from '@talendig/shared';
-import type { Subject, CreateSubjectInput, UpdateSubjectInput } from '@talendig/shared';
+import type { Subject, CreateSubjectInput, UpdateSubjectInput, Module, Program } from '@talendig/shared';
+import { useNavigate } from 'react-router-dom';
 
 interface SubjectFormProps {
   subject?: Subject;
@@ -36,8 +40,39 @@ export const SubjectForm: FC<SubjectFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { subjectsService } = useServices();
+  const { subjectsService, modulesService, programsService } = useServices();
+  const navigate = useNavigate();
   const isEdit = !!subject;
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loadingPrograms, setLoadingPrograms] = useState(false);
+
+  useEffect(() => {
+    if (isEdit && subject?.id) {
+      loadPrograms();
+    }
+  }, [isEdit, subject?.id]);
+
+  const loadPrograms = async () => {
+    if (!subject?.id) return;
+    try {
+      setLoadingPrograms(true);
+      const allModules = await modulesService.getAll();
+      const modulesWithSubject = allModules.filter((m) => m.subjectId === subject.id);
+      const programIds = new Set(modulesWithSubject.map((m) => m.programId));
+      
+      const programsData = await Promise.all(
+        Array.from(programIds).map((programId) =>
+          programsService.getById(programId).catch(() => null)
+        )
+      );
+      
+      setPrograms(programsData.filter((p): p is Program => !!p));
+    } catch (error) {
+      console.error('Error loading programs:', error);
+    } finally {
+      setLoadingPrograms(false);
+    }
+  };
 
   const formik = useFormik<CreateSubjectInput>({
     initialValues: {
@@ -147,6 +182,42 @@ export const SubjectForm: FC<SubjectFormProps> = ({
           <MenuItem value="active">Active</MenuItem>
           <MenuItem value="inactive">Inactive</MenuItem>
         </TextField>
+        
+        {isEdit && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="h6" gutterBottom>
+              Programs Using This Subject ({programs.length})
+            </Typography>
+            {loadingPrograms ? (
+              <Typography variant="body2" color="text.secondary">
+                Loading programs...
+              </Typography>
+            ) : programs.length === 0 ? (
+              <Alert severity="info">
+                This subject is not currently assigned to any programs. Assign subjects to programs through modules.
+              </Alert>
+            ) : (
+              <Box sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
+                  {programs.map((program) => (
+                    <Chip
+                      key={program.id}
+                      label={program.name}
+                      onClick={() => navigate(`/programs/${program.id}`)}
+                      sx={{ cursor: 'pointer' }}
+                    />
+                  ))}
+                </Box>
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  Note: Subject assignment to programs is managed through modules. 
+                  To assign this subject to a program, edit the program's modules.
+                </Alert>
+              </Box>
+            )}
+          </>
+        )}
+        
         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={onCancel}>
             Cancel

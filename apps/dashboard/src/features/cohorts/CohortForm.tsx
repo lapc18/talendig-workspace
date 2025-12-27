@@ -8,9 +8,18 @@ import {
   MenuItem,
   Paper,
   Typography,
+  Divider,
+  Checkbox,
+  FormControlLabel,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Chip,
 } from '@mui/material';
+import { Delete as DeleteIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
-import type { Cohort, CreateCohortInput, Program } from '@talendig/shared';
+import type { Cohort, CreateCohortInput, Program, Student } from '@talendig/shared';
 import { format } from 'date-fns';
 
 interface CohortFormProps {
@@ -32,13 +41,21 @@ export const CohortForm: FC<CohortFormProps> = ({
   onSuccess,
   onCancel,
 }) => {
-  const { cohortsService, programsService } = useServices();
+  const { cohortsService, programsService, studentsService } = useServices();
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [allStudents, setAllStudents] = useState<Student[]>([]);
+  const [cohortStudents, setCohortStudents] = useState<Student[]>([]);
+  const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
   const isEdit = !!cohort;
 
   useEffect(() => {
     loadPrograms();
-  }, []);
+    if (isEdit && cohort?.id) {
+      loadStudents();
+    } else {
+      loadAllStudents();
+    }
+  }, [isEdit, cohort?.id]);
 
   const loadPrograms = async () => {
     try {
@@ -46,6 +63,56 @@ export const CohortForm: FC<CohortFormProps> = ({
       setPrograms(data);
     } catch (error) {
       console.error('Error loading programs:', error);
+    }
+  };
+
+  const loadAllStudents = async () => {
+    try {
+      const data = await studentsService.getAll();
+      setAllStudents(data);
+    } catch (error) {
+      console.error('Error loading students:', error);
+    }
+  };
+
+  const loadStudents = async () => {
+    if (!cohort?.id) return;
+    try {
+      const cohortStudentsData = await studentsService.getByCohortId(cohort.id);
+      setCohortStudents(cohortStudentsData);
+      setSelectedStudentIds(new Set(cohortStudentsData.map((s) => s.id)));
+      
+      // Also load all students for selection
+      const allStudentsData = await studentsService.getAll();
+      setAllStudents(allStudentsData);
+    } catch (error) {
+      console.error('Error loading students:', error);
+    }
+  };
+
+  const handleStudentToggle = (studentId: string) => {
+    const newSelected = new Set(selectedStudentIds);
+    if (newSelected.has(studentId)) {
+      newSelected.delete(studentId);
+    } else {
+      newSelected.add(studentId);
+    }
+    setSelectedStudentIds(newSelected);
+  };
+
+  const handleRemoveStudent = async (studentId: string) => {
+    if (!window.confirm('Are you sure you want to remove this student from the cohort?')) return;
+    try {
+      const student = cohortStudents.find((s) => s.id === studentId);
+      if (student) {
+        await studentsService.update({
+          id: studentId,
+          cohortId: '', // Remove from cohort
+        });
+        await loadStudents();
+      }
+    } catch (error) {
+      console.error('Error removing student:', error);
     }
   };
 
@@ -60,11 +127,40 @@ export const CohortForm: FC<CohortFormProps> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
+        let cohortId: string;
         if (isEdit) {
           await cohortsService.update({ id: cohort.id, ...values });
+          cohortId = cohort.id;
         } else {
-          await cohortsService.create(values);
+          const newCohort = await cohortsService.create(values);
+          cohortId = newCohort.id;
         }
+        
+        // Update student assignments
+        if (isEdit) {
+          // Remove students that were deselected
+          const removedStudents = cohortStudents.filter(
+            (s) => !selectedStudentIds.has(s.id)
+          );
+          for (const student of removedStudents) {
+            await studentsService.update({
+              id: student.id,
+              cohortId: '',
+            });
+          }
+        }
+        
+        // Add newly selected students
+        const studentsToAdd = allStudents.filter(
+          (s) => selectedStudentIds.has(s.id) && s.cohortId !== cohortId
+        );
+        for (const student of studentsToAdd) {
+          await studentsService.update({
+            id: student.id,
+            cohortId,
+          });
+        }
+        
         onSuccess();
       } catch (error) {
         console.error('Error saving cohort:', error);
@@ -154,6 +250,84 @@ export const CohortForm: FC<CohortFormProps> = ({
           <MenuItem value="inactive">Inactive</MenuItem>
           <MenuItem value="completed">Completed</MenuItem>
         </TextField>
+        
+        {isEdit && (
+          <>
+            <Divider sx={{ my: 3 }} />
+            <Typography variant="h6" gutterBottom>
+              Students ({selectedStudentIds.size})
+            </Typography>
+            
+            {cohortStudents.length > 0 && (
+              <Box sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Current Students
+                </Typography>
+                <List>
+                  {cohortStudents.map((student) => (
+                    <ListItem
+                      key={student.id}
+                      secondaryAction={
+                        <IconButton
+                          edge="end"
+                          onClick={() => handleRemoveStudent(student.id)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      }
+                    >
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={selectedStudentIds.has(student.id)}
+                            onChange={() => handleStudentToggle(student.id)}
+                          />
+                        }
+                        label={student.fullName}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              </Box>
+            )}
+            
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                Available Students
+              </Typography>
+              <Box sx={{ maxHeight: 300, overflow: 'auto', border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1 }}>
+                {allStudents
+                  .filter((s) => !cohortStudents.find((cs) => cs.id === s.id))
+                  .map((student) => (
+                    <FormControlLabel
+                      key={student.id}
+                      control={
+                        <Checkbox
+                          checked={selectedStudentIds.has(student.id)}
+                          onChange={() => handleStudentToggle(student.id)}
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body2">{student.fullName}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {student.email}
+                          </Typography>
+                        </Box>
+                      }
+                      sx={{ display: 'block', mb: 1 }}
+                    />
+                  ))}
+                {allStudents.filter((s) => !cohortStudents.find((cs) => cs.id === s.id)).length === 0 && (
+                  <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                    No available students
+                  </Typography>
+                )}
+              </Box>
+            </Box>
+          </>
+        )}
+        
         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
           <Button variant="outlined" onClick={onCancel}>
             Cancel

@@ -23,11 +23,11 @@ export const AppRoutes: FC = () => {
               <Routes>
                 <Route path="/" element={<DashboardPage />} />
                 <Route path="/programs/*" element={<ProgramsRoutes />} />
-                <Route path="/modules" element={<ModulesRoutes />} />
+                <Route path="/modules/*" element={<ModulesRoutes />} />
                 <Route path="/cohorts/*" element={<CohortsRoutes />} />
-                <Route path="/students" element={<StudentsRoutes />} />
-                <Route path="/instructors" element={<InstructorsRoutes />} />
-                <Route path="/subjects" element={<SubjectsRoutes />} />
+                <Route path="/students/*" element={<StudentsRoutes />} />
+                <Route path="/instructors/*" element={<InstructorsRoutes />} />
+                <Route path="/subjects/*" element={<SubjectsRoutes />} />
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>
             </MainLayout>
