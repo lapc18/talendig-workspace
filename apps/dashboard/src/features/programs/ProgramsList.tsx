@@ -1,39 +1,61 @@
 import React, { FC, useEffect, useState } from 'react';
-import { Box, Grid, IconButton, Typography, Button } from '@mui/material';
-import { Edit as EditIcon, Block as BlockIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useServices, LoadingSpinner, EntityCard } from '@talendig/shared';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Button, Typography } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import SortIcon from '@mui/icons-material/Sort';
+import SchoolIcon from '@mui/icons-material/School';
+import { useServices, LoadingSpinner, PageHeader, FiltersBar, ProgramCard, PaginationControls } from '@talendig/shared';
 import type { Program, Module } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
 interface ProgramWithDetails extends Program {
   modulesCount: number;
+  studentsCount: number;
   startDate?: string;
   endDate?: string;
 }
 
+const ITEMS_PER_PAGE = 9;
+
 export const ProgramsList: FC = () => {
-  const { programsService, modulesService } = useServices();
+  const { programsService, modulesService, studentsService } = useServices();
   const navigate = useNavigate();
   const [programs, setPrograms] = useState<ProgramWithDetails[]>([]);
+  const [filteredPrograms, setFilteredPrograms] = useState<ProgramWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadPrograms();
   }, []);
 
+  useEffect(() => {
+    filterPrograms();
+  }, [programs, searchQuery, statusFilter]);
+
   const loadPrograms = async () => {
     try {
       setLoading(true);
       const data = await programsService.getAll();
-      // Filter out inactive programs
-      const activePrograms = data.filter((program) => program.status === 'active');
       
-      // Load modules for each program to get count and dates
+      // Load modules and students for each program
       const programsWithDetails = await Promise.all(
-        activePrograms.map(async (program) => {
+        data.map(async (program) => {
           try {
-            const modules = await modulesService.getByProgramId(program.id);
+            const [modules, students] = await Promise.all([
+              modulesService.getByProgramId(program.id).catch(() => []),
+              studentsService.getAll().catch(() => []),
+            ]);
+            
+            // Count students in cohorts that belong to this program
+            const programStudents = students.filter((student) => {
+              // This would need proper cohort-program relationship
+              // For now, just return all students count
+              return true;
+            });
+            
             const modulesWithDates = modules.filter((m) => m.startDate || m.endDate);
             
             let startDate: string | undefined;
@@ -53,14 +75,16 @@ export const ProgramsList: FC = () => {
             return {
               ...program,
               modulesCount: modules.length,
+              studentsCount: programStudents.length,
               startDate,
               endDate,
             };
           } catch (error) {
-            console.error(`Error loading modules for program ${program.id}:`, error);
+            console.error(`Error loading details for program ${program.id}:`, error);
             return {
               ...program,
               modulesCount: 0,
+              studentsCount: 0,
             };
           }
         })
@@ -74,17 +98,37 @@ export const ProgramsList: FC = () => {
     }
   };
 
-  const handleDeactivate = async (id: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (window.confirm('Are you sure you want to deactivate this program?')) {
-      try {
-        await programsService.deactivate(id);
-        loadPrograms();
-      } catch (error) {
-        console.error('Error deactivating program:', error);
-      }
+  const filterPrograms = () => {
+    let filtered = [...programs];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (program) =>
+          program.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          program.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((program) => program.status === statusFilter);
+    }
+
+    setFilteredPrograms(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const paginatedPrograms = filteredPrograms.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(filteredPrograms.length / ITEMS_PER_PAGE);
 
   if (loading) {
     return <LoadingSpinner />;
@@ -92,77 +136,104 @@ export const ProgramsList: FC = () => {
 
   return (
     <Box>
-      <Grid container spacing={3}>
-        {programs.map((program) => (
+      <PageHeader
+        title="Programs"
+        subtitle="Manage and view all educational programs"
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => navigate('/programs/new')}
+            sx={{
+              backgroundColor: '#1337ec',
+              '&:hover': {
+                backgroundColor: '#0f2fcc',
+              },
+            }}
+          >
+            Create Program
+          </Button>
+        }
+      />
+
+      <FiltersBar>
+        <TextField
+          placeholder="Search programs..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
+          }}
+          sx={{ flex: 1, maxWidth: 400 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="inactive">Inactive</MenuItem>
+            <MenuItem value="completed">Completed</MenuItem>
+            <MenuItem value="cancelled">Cancelled</MenuItem>
+            <MenuItem value="pending">Pending</MenuItem>
+          </Select>
+        </FormControl>
+        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <SortIcon />
+        </IconButton>
+      </FiltersBar>
+
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        {paginatedPrograms.map((program) => (
           <Grid item xs={12} sm={6} md={4} key={program.id}>
-            <EntityCard
+            <ProgramCard
               title={program.name}
-              subtitle={program.description}
+              description={program.description || ''}
               status={program.status}
-              statusPosition="right"
-              onClick={() => navigate(`/programs/${program.id}`)}
-              actions={
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/programs/${program.id}`);
-                    }}
-                  >
-                    <ViewIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/programs/${program.id}/edit`);
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleDeactivate(program.id, e)}
-                  >
-                    <BlockIcon />
-                  </IconButton>
-                </Box>
+              duration={`${program.durationMonths} months`}
+              modulesCount={program.modulesCount}
+              studentsCount={program.studentsCount}
+              date={
+                program.startDate
+                  ? format(new Date(program.startDate), 'MMM dd, yyyy')
+                  : undefined
               }
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                {program.type && (
-                  <Typography variant="body2" color="text.secondary">
-                    Type: <strong>{program.type}</strong>
-                  </Typography>
-                )}
-                <Typography variant="body2" color="text.secondary">
-                  Duration: <strong>{program.durationMonths} months</strong>
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Modules: <strong>{program.modulesCount}</strong>
-                </Typography>
-                {program.startDate && program.endDate && (
-                  <>
-                    <Typography variant="body2" color="text.secondary">
-                      Start: <strong>{format(new Date(program.startDate), 'MMM dd, yyyy')}</strong>
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      End: <strong>{format(new Date(program.endDate), 'MMM dd, yyyy')}</strong>
-                    </Typography>
-                  </>
-                )}
-              </Box>
-            </EntityCard>
+              icon={<SchoolIcon />}
+              onClick={() => navigate(`/programs/${program.id}`)}
+              onMenuClick={(e) => {
+                      e.stopPropagation();
+                // Handle menu click
+              }}
+            />
           </Grid>
         ))}
       </Grid>
-      {programs.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
+
+      {filteredPrograms.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: (theme) =>
+                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+            }}
+          >
             No programs found
           </Typography>
         </Box>
+      )}
+
+      {filteredPrograms.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredPrograms.length}
+          onPageChange={handlePageChange}
+        />
       )}
     </Box>
   );
