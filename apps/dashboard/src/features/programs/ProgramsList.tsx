@@ -1,10 +1,10 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Button, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import SchoolIcon from '@mui/icons-material/School';
 import { useServices, LoadingSpinner, PageHeader, FiltersBar, ProgramCard, PaginationControls } from '@talendig/shared';
-import type { Program, Module } from '@talendig/shared';
+import type { Program } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -136,25 +136,6 @@ export const ProgramsList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Programs"
-        subtitle="Manage and view all educational programs"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/programs/new')}
-            sx={{
-              backgroundColor: '#1337ec',
-              '&:hover': {
-                backgroundColor: '#0f2fcc',
-              },
-            }}
-          >
-            Create Program
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search programs..."

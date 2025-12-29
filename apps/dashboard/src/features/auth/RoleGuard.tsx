@@ -1,4 +1,4 @@
-import React, { FC, ReactNode } from 'react';
+import { FC, ReactNode } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '@talendig/shared';
 import type { UserRole } from '@talendig/shared';

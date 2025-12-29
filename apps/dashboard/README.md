@@ -4,7 +4,7 @@ Academic Cohort & Program Management WebApp built with React, Vite, Nx, MUI, and
 
 ## Features
 
-- **Programs Management**: Create and manage 10-month academic programs with automatic module generation
+- **Programs Management**: Create and manage N(10 as default)-month academic programs with automatic module generation
 - **Modules Management**: Assign subjects and instructors to program modules
 - **Cohorts Management**: Create and manage student cohorts
 - **Students Management**: Enroll students into cohorts and track their progress

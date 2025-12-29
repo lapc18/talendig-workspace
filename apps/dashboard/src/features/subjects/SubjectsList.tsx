@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Box, Grid, IconButton, Typography, Chip } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
 import { useServices, LoadingSpinner, EntityCard } from '@talendig/shared';

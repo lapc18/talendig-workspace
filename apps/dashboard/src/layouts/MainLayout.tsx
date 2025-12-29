@@ -1,11 +1,10 @@
-import React, { FC } from 'react';
+import { FC } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import GroupIcon from '@mui/icons-material/Group';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import { AppShell, type NavItem } from '@talendig/shared';
 import { useAuth } from '@talendig/shared';

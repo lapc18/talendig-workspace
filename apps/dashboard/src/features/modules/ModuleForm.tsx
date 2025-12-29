@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useFormik } from 'formik';
 import * as yup from 'yup';
 import {
@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import { useServices } from '@talendig/shared';
 import type { Module, CreateModuleInput, UpdateModuleInput, Program, Instructor, Subject } from '@talendig/shared';
-import { format } from 'date-fns';
 
 interface ModuleFormProps {
   module?: Module;

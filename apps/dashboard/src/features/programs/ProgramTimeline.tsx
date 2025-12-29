@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { Box, Paper, Typography, Chip, Link } from '@mui/material';
 import { useServices } from '@talendig/shared';
 import type { Module, Instructor, Subject } from '@talendig/shared';

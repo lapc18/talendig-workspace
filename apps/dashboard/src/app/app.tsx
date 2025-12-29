@@ -1,4 +1,3 @@
-import React from 'react';
 import { ThemeProvider, CssBaseline } from '@mui/material';
 import { talendigTheme, AuthProvider, AuthService, ServicesProvider } from '@talendig/shared';
 import { auth, db } from '../firebase/config';
