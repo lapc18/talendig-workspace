@@ -5,7 +5,7 @@ import SortIcon from '@mui/icons-material/Sort';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useServices, LoadingSpinner, PageHeader, FiltersBar, InstructorCard, PaginationControls } from '@talendig/shared';
-import type { Instructor, Module, Program, Subject } from '@talendig/shared';
+import type { Instructor, InstructorCardStatus, Module, Program, Subject } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { isFuture } from 'date-fns';
 
@@ -260,19 +260,6 @@ export const InstructorsList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Instructors"
-        subtitle="Manage and view all instructors"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/instructors/new')}
-          >
-            Create Instructor
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search instructors..."
@@ -388,7 +375,7 @@ export const InstructorsList: FC = () => {
               <InstructorCard
                 title={instructor.fullName}
                 subtitle={instructor.email}
-                status={instructor.status}
+                status={instructor.status as InstructorCardStatus}
                 phone={instructor.phone}
                 bio={instructor.shortBio}
                 technologies={instructor.technologies}

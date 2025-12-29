@@ -5,7 +5,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
-import ScheduleIcon from '@mui/icons-material/Schedule';
+// import ScheduleIcon from '@mui/icons-material/Schedule';
 import GroupIcon from '@mui/icons-material/Group';
 import { AppShell, type NavItem } from '@talendig/shared';
 import { useAuth } from '@talendig/shared';
@@ -18,7 +18,7 @@ const navItems: NavItem[] = [
   { label: 'Modules', path: '/modules', icon: <MenuBookIcon /> },
   { label: 'Students', path: '/students', icon: <PeopleIcon /> },
   { label: 'Instructors', path: '/instructors', icon: <PersonIcon /> },
-  { label: 'Schedule', path: '/schedule', icon: <ScheduleIcon /> },
+  // { label: 'Schedule', path: '/schedule', icon: <ScheduleIcon /> }, // TODO: Add schedule feature
 ];
 
 export const MainLayout: FC<MainLayoutProps> = ({ children }) => {
