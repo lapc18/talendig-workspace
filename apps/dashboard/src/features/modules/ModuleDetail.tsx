@@ -2,17 +2,10 @@ import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
-  Paper,
+  Card,
   Typography,
   Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Link,
-  Chip,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
@@ -24,7 +17,7 @@ import type {
   Instructor,
   Subject,
 } from '@talendig/shared';
-import { LoadingSpinner, PageHeader } from '@talendig/shared';
+import { LoadingSpinner, PageHeader, StatusChip } from '@talendig/shared';
 
 interface AssignmentWithDetails extends CohortModuleAssignment {
   cohort?: Cohort;
@@ -153,7 +146,18 @@ export const ModuleDetail: FC = () => {
           </>
         }
       />
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Card
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3, // xl
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+          border: (theme) =>
+            `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           Module Details
         </Typography>
@@ -203,10 +207,21 @@ export const ModuleDetail: FC = () => {
             </Box>
           )}
         </Box>
-      </Paper>
+      </Card>
       
       {(module.instructorId || module.subjectId) && (
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Assignments
           </Typography>
@@ -250,9 +265,19 @@ export const ModuleDetail: FC = () => {
               </Box>
             )}
           </Box>
-        </Paper>
+        </Card>
       )}
-      <Paper sx={{ p: 3 }}>
+      <Card
+        sx={{
+          p: 3,
+          borderRadius: 3, // xl
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+          border: (theme) =>
+            `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           Cohort Assignments
         </Typography>
@@ -261,71 +286,36 @@ export const ModuleDetail: FC = () => {
             No cohort assignments found for this module.
           </Typography>
         ) : (
-          <TableContainer sx={{ mt: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Cohort</TableCell>
-                  <TableCell>Instructor</TableCell>
-                  <TableCell>Subject</TableCell>
-                  <TableCell>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {assignments.map((assignment) => (
-                  <TableRow key={assignment.id}>
-                    <TableCell>
-                      {assignment.cohort ? (
-                        <Link
-                          component="button"
-                          variant="body2"
-                          onClick={() => navigate(`/cohorts/${assignment.cohort!.id}`)}
-                          sx={{ cursor: 'pointer' }}
-                        >
-                          {assignment.cohort.name}
-                        </Link>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Unknown
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {assignment.instructor ? (
-                        <Typography variant="body2">
-                          {assignment.instructor.fullName}
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Unknown
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {assignment.subject ? (
-                        <Typography variant="body2">
-                          {assignment.subject.name} ({assignment.subject.code})
-                        </Typography>
-                      ) : (
-                        <Typography variant="body2" color="text.secondary">
-                          Unknown
-                        </Typography>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Chip
-                        label={assignment.status}
-                        color={assignment.status === 'active' ? 'success' : 'default'}
-                        size="small"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+            {assignments.map((assignment) => (
+              <Card
+                key={assignment.id}
+                sx={{
+                  p: 2,
+                  borderRadius: 2, // lg
+                  border: (theme) =>
+                    `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <Box>
+                  <Typography variant="body2" fontWeight={500}>
+                    {assignment.cohort?.name || 'Unknown Cohort'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Instructor: {assignment.instructor?.fullName || 'Unknown'} | Subject: {assignment.subject?.name || 'Unknown'}
+                  </Typography>
+                </Box>
+                <StatusChip status={assignment.status} />
+              </Card>
+            ))}
+          </Box>
         )}
-      </Paper>
+      </Card>
     </Box>
   );
 };

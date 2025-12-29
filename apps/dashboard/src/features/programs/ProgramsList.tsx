@@ -1,5 +1,5 @@
-import { FC, useEffect, useState } from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Button, Typography } from '@mui/material';
+import { FC, useEffect, useState, useCallback } from 'react';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import SchoolIcon from '@mui/icons-material/School';
@@ -27,15 +27,7 @@ export const ProgramsList: FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    loadPrograms();
-  }, []);
-
-  useEffect(() => {
-    filterPrograms();
-  }, [programs, searchQuery, statusFilter]);
-
-  const loadPrograms = async () => {
+  const loadPrograms = useCallback(async () => {
     try {
       setLoading(true);
       const data = await programsService.getAll();
@@ -96,9 +88,9 @@ export const ProgramsList: FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [programsService, modulesService, studentsService]);
 
-  const filterPrograms = () => {
+  const filterPrograms = useCallback(() => {
     let filtered = [...programs];
 
     // Apply search filter
@@ -117,7 +109,15 @@ export const ProgramsList: FC = () => {
 
     setFilteredPrograms(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  };
+  }, [programs, searchQuery, statusFilter]);
+
+  useEffect(() => {
+    loadPrograms();
+  }, [loadPrograms]);
+
+  useEffect(() => {
+    filterPrograms();
+  }, [filterPrograms]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -136,6 +136,19 @@ export const ProgramsList: FC = () => {
 
   return (
     <Box>
+      <PageHeader
+        title="Programs"
+        subtitle="Manage and view all programs"
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => navigate('/programs/new')}
+          >
+            Create Program
+          </Button>
+        }
+      />
+
       <FiltersBar>
         <TextField
           placeholder="Search programs..."

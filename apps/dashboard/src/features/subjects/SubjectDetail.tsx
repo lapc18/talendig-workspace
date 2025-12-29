@@ -1,8 +1,8 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, Chip, Link } from '@mui/material';
+import { Box, Card, Typography, Button, Chip, Link } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
-import { useServices, LoadingSpinner, PageHeader, StatusIndicator } from '@talendig/shared';
+import { useServices, LoadingSpinner, PageHeader, StatusChip } from '@talendig/shared';
 import type { Subject, Module, Program } from '@talendig/shared';
 
 export const SubjectDetail: FC = () => {
@@ -87,7 +87,18 @@ export const SubjectDetail: FC = () => {
           </>
         }
       />
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Card
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3, // xl
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+          border: (theme) =>
+            `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           Subject Details
         </Typography>
@@ -114,7 +125,7 @@ export const SubjectDetail: FC = () => {
             <Typography variant="body2" color="text.secondary">
               Status
             </Typography>
-            <StatusIndicator status={subject.status} variant="chip" size="small" />
+            <StatusChip status={subject.status} />
           </Box>
         </Box>
         {subject.description && (
@@ -125,10 +136,21 @@ export const SubjectDetail: FC = () => {
             <Typography>{subject.description}</Typography>
           </Box>
         )}
-      </Paper>
+      </Card>
       
       {programs.length > 0 && (
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Programs Using This Subject ({programs.length})
           </Typography>
@@ -143,11 +165,22 @@ export const SubjectDetail: FC = () => {
               />
             ))}
           </Box>
-        </Paper>
+        </Card>
       )}
       
       {modules.length > 0 && (
-        <Paper sx={{ p: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Modules Using This Subject ({modules.length})
           </Typography>
@@ -155,19 +188,18 @@ export const SubjectDetail: FC = () => {
             {modules.map((module) => {
               const program = programs.find((p) => p.id === module.programId);
               return (
-                <Box
+                <Card
                   key={module.id}
                   sx={{
                     p: 2,
-                    border: '1px solid',
-                    borderColor: 'divider',
-                    borderRadius: 1,
+                    borderRadius: 2, // lg
+                    border: (theme) =>
+                      `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+                    backgroundColor: (theme) =>
+                      theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    '&:hover': {
-                      backgroundColor: 'action.hover',
-                    },
                   }}
                 >
                   <Box>
@@ -198,19 +230,29 @@ export const SubjectDetail: FC = () => {
                   >
                     View Module
                   </Button>
-                </Box>
+                </Card>
               );
             })}
           </Box>
-        </Paper>
+        </Card>
       )}
       
       {programs.length === 0 && modules.length === 0 && (
-        <Paper sx={{ p: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="body1" color="text.secondary" align="center">
             This subject is not currently assigned to any programs or modules.
           </Typography>
-        </Paper>
+        </Card>
       )}
     </Box>
   );

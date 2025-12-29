@@ -6,12 +6,14 @@ import {
   IconButton,
   styled,
   CardContent,
+  Chip,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import BookIcon from '@mui/icons-material/Book';
 import { IconTile } from '../IconTile';
 import { StatusChip } from '../StatusChip';
-import type { ProgramCardProps } from './ProgramCard.types';
+import type { SubjectCardProps } from './SubjectCard.types';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
@@ -72,23 +74,24 @@ const FooterBox = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.mode === 'light' ? '#f1f5f9' : '#1f2937'}`,
 }));
 
-export const ProgramCard: FC<ProgramCardProps> = ({
+export const SubjectCard: FC<SubjectCardProps> = ({
   title,
-  description,
+  subtitle,
   status,
-  duration,
-  modulesCount,
-  studentsCount,
-  date,
+  type,
+  defaultHours,
+  description,
+  programs,
   icon,
   onClick,
   onMenuClick,
+  onProgramClick,
 }) => {
   return (
     <StyledCard onClick={onClick}>
       <StyledCardContent>
         <HeaderBox>
-          {icon && <IconTile icon={icon} size="medium" />}
+          {icon || <IconTile icon={<BookIcon />} size="medium" />}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <StatusChip status={status} />
             {onMenuClick && (
@@ -135,11 +138,11 @@ export const ProgramCard: FC<ProgramCardProps> = ({
             whiteSpace: 'nowrap',
           }}
         >
-          {description}
+          {subtitle}
         </Typography>
 
         <MetadataBox>
-          {duration && (
+          {type && (
             <MetadataRow>
               <LabelText
                 variant="caption"
@@ -148,7 +151,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Duration
+                Type
               </LabelText>
               <Typography
                 variant="body2"
@@ -163,11 +166,11 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   minWidth: 0,
                 }}
               >
-                {duration}
+                {type}
               </Typography>
             </MetadataRow>
           )}
-          {modulesCount !== undefined && (
+          {defaultHours !== undefined && (
             <MetadataRow alignRight>
               <LabelText
                 variant="caption"
@@ -176,7 +179,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Modules
+                Default Hours
               </LabelText>
               <Typography
                 variant="body2"
@@ -186,12 +189,12 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   color: (theme) => theme.palette.text.primary,
                 }}
               >
-                {modulesCount}
+                {defaultHours}h
               </Typography>
             </MetadataRow>
           )}
-          {studentsCount !== undefined && (
-            <MetadataRow alignRight>
+          {description && (
+            <MetadataRow>
               <LabelText
                 variant="caption"
                 sx={{
@@ -199,36 +202,67 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Students
+                Description
               </LabelText>
               <Typography
                 variant="body2"
                 sx={{
                   fontSize: 14,
-                  fontWeight: 500,
-                  color: (theme) => theme.palette.text.primary,
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                  lineHeight: 1.5,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
-                {studentsCount}
+                {description}
               </Typography>
             </MetadataRow>
+          )}
+          {programs && programs.length > 0 && (
+            <Box>
+              <LabelText
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                  mb: 0.5,
+                  display: 'block',
+                }}
+              >
+                Programs
+              </LabelText>
+              <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                {programs.slice(0, 3).map((program, index) => (
+                  <Chip
+                    key={index}
+                    label={program}
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onProgramClick?.(e, index);
+                    }}
+                    sx={{ cursor: 'pointer' }}
+                  />
+                ))}
+                {programs.length > 3 && (
+                  <Chip
+                    label={`+${programs.length - 3}`}
+                    size="small"
+                    variant="outlined"
+                  />
+                )}
+              </Box>
+            </Box>
           )}
         </MetadataBox>
       </StyledCardContent>
 
       <FooterBox>
-        {date && (
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: 12,
-              color: (theme) =>
-                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
-            }}
-          >
-            {date}
-          </Typography>
-        )}
+        <StatusChip status={status} />
         <Box
           sx={{
             display: 'flex',
@@ -247,5 +281,5 @@ export const ProgramCard: FC<ProgramCardProps> = ({
   );
 };
 
-export type { ProgramCardProps };
+export type { SubjectCardProps };
 

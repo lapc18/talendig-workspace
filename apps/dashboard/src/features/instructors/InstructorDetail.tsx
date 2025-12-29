@@ -1,8 +1,8 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, Chip, Link } from '@mui/material';
+import { Box, Card, Typography, Button, Chip, Link } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon } from '@mui/icons-material';
-import { useServices, LoadingSpinner, PageHeader } from '@talendig/shared';
+import { useServices, LoadingSpinner, PageHeader, StatusChip } from '@talendig/shared';
 import type { Instructor, Module, Program, Subject } from '@talendig/shared';
 import { format, isFuture } from 'date-fns';
 
@@ -126,7 +126,18 @@ export const InstructorDetail: FC = () => {
           </>
         }
       />
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Card
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3, // xl
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+          border: (theme) =>
+            `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           Instructor Details
         </Typography>
@@ -143,11 +154,7 @@ export const InstructorDetail: FC = () => {
             <Typography variant="body2" color="text.secondary">
               Status
             </Typography>
-            <Chip
-              label={instructor.status}
-              color={instructor.status === 'active' ? 'success' : 'default'}
-              size="small"
-            />
+            <StatusChip status={instructor.status} />
           </Box>
         </Box>
         {instructor.shortBio && (
@@ -180,10 +187,21 @@ export const InstructorDetail: FC = () => {
             </Link>
           </Box>
         )}
-      </Paper>
+      </Card>
       
       {subjects.length > 0 && (
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Subjects ({subjects.length})
           </Typography>
@@ -197,23 +215,36 @@ export const InstructorDetail: FC = () => {
               />
             ))}
           </Box>
-        </Paper>
+        </Card>
       )}
       
       {currentModules.length > 0 && (
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            mb: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Current Modules ({currentModules.length})
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {currentModules.map((module) => (
-              <Box
+              <Card
                 key={module.id}
                 sx={{
                   p: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
+                  borderRadius: 2, // lg
+                  border: (theme) =>
+                    `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
                 }}
               >
                 <Typography variant="subtitle1">
@@ -230,26 +261,38 @@ export const InstructorDetail: FC = () => {
                     {format(new Date(module.endDate), 'MMM dd, yyyy')}
                   </Typography>
                 )}
-              </Box>
+              </Card>
             ))}
           </Box>
-        </Paper>
+        </Card>
       )}
       
       {futureModules.length > 0 && (
-        <Paper sx={{ p: 3 }}>
+        <Card
+          sx={{
+            p: 3,
+            borderRadius: 3, // xl
+            backgroundColor: (theme) =>
+              theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+            border: (theme) =>
+              `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+          }}
+        >
           <Typography variant="h6" gutterBottom>
             Future Modules ({futureModules.length})
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
             {futureModules.map((module) => (
-              <Box
+              <Card
                 key={module.id}
                 sx={{
                   p: 2,
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: 1,
+                  borderRadius: 2, // lg
+                  border: (theme) =>
+                    `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+                  backgroundColor: (theme) =>
+                    theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
                 }}
               >
                 <Typography variant="subtitle1">
@@ -266,10 +309,10 @@ export const InstructorDetail: FC = () => {
                     {format(new Date(module.endDate), 'MMM dd, yyyy')}
                   </Typography>
                 )}
-              </Box>
+              </Card>
             ))}
           </Box>
-        </Paper>
+        </Card>
       )}
     </Box>
   );

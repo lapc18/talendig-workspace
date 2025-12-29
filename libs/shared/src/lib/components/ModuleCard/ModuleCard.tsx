@@ -6,12 +6,14 @@ import {
   IconButton,
   styled,
   CardContent,
+  Link,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { IconTile } from '../IconTile';
 import { StatusChip } from '../StatusChip';
-import type { ProgramCardProps } from './ProgramCard.types';
+import type { ModuleCardProps } from './ModuleCard.types';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
@@ -72,23 +74,27 @@ const FooterBox = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.mode === 'light' ? '#f1f5f9' : '#1f2937'}`,
 }));
 
-export const ProgramCard: FC<ProgramCardProps> = ({
+export const ModuleCard: FC<ModuleCardProps> = ({
   title,
-  description,
+  subtitle,
   status,
-  duration,
-  modulesCount,
-  studentsCount,
+  program,
+  instructor,
+  subject,
+  hours,
+  startDate,
+  endDate,
   date,
   icon,
   onClick,
   onMenuClick,
+  onProgramClick,
 }) => {
   return (
     <StyledCard onClick={onClick}>
       <StyledCardContent>
         <HeaderBox>
-          {icon && <IconTile icon={icon} size="medium" />}
+          {icon || <IconTile icon={<CalendarTodayIcon />} size="medium" />}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <StatusChip status={status} />
             {onMenuClick && (
@@ -122,24 +128,34 @@ export const ProgramCard: FC<ProgramCardProps> = ({
           {title}
         </Typography>
 
-        <Typography
-          variant="body2"
-          sx={{
-            fontSize: 14,
-            color: (theme) =>
-              theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
-            lineHeight: 1.5,
-            mb: 2,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {description}
-        </Typography>
+        {subtitle && (
+          <Typography
+            variant="body2"
+            onClick={(e) => {
+              e.stopPropagation();
+              onProgramClick?.(e);
+            }}
+            sx={{
+              fontSize: 14,
+              color: (theme) =>
+                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+              lineHeight: 1.5,
+              mb: 2,
+              cursor: 'pointer',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              '&:hover': {
+                color: '#1337ec',
+              },
+            }}
+          >
+            {subtitle}
+          </Typography>
+        )}
 
         <MetadataBox>
-          {duration && (
+          {program && (
             <MetadataRow>
               <LabelText
                 variant="caption"
@@ -148,7 +164,45 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Duration
+                Program
+              </LabelText>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onProgramClick?.(e);
+                }}
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#1337ec',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {program}
+              </Link>
+            </MetadataRow>
+          )}
+          {instructor && (
+            <MetadataRow>
+              <LabelText
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                }}
+              >
+                Instructor
               </LabelText>
               <Typography
                 variant="body2"
@@ -163,11 +217,39 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   minWidth: 0,
                 }}
               >
-                {duration}
+                {instructor}
               </Typography>
             </MetadataRow>
           )}
-          {modulesCount !== undefined && (
+          {subject && (
+            <MetadataRow>
+              <LabelText
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                }}
+              >
+                Subject
+              </LabelText>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: (theme) => theme.palette.text.primary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {subject}
+              </Typography>
+            </MetadataRow>
+          )}
+          {hours !== undefined && (
             <MetadataRow alignRight>
               <LabelText
                 variant="caption"
@@ -176,7 +258,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Modules
+                Hours
               </LabelText>
               <Typography
                 variant="body2"
@@ -186,12 +268,12 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   color: (theme) => theme.palette.text.primary,
                 }}
               >
-                {modulesCount}
+                {hours}h
               </Typography>
             </MetadataRow>
           )}
-          {studentsCount !== undefined && (
-            <MetadataRow alignRight>
+          {startDate && (
+            <MetadataRow>
               <LabelText
                 variant="caption"
                 sx={{
@@ -199,7 +281,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Students
+                Start
               </LabelText>
               <Typography
                 variant="body2"
@@ -207,9 +289,42 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   fontSize: 14,
                   fontWeight: 500,
                   color: (theme) => theme.palette.text.primary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
-                {studentsCount}
+                {startDate}
+              </Typography>
+            </MetadataRow>
+          )}
+          {endDate && (
+            <MetadataRow>
+              <LabelText
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                }}
+              >
+                End
+              </LabelText>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: (theme) => theme.palette.text.primary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                }}
+              >
+                {endDate}
               </Typography>
             </MetadataRow>
           )}
@@ -247,5 +362,5 @@ export const ProgramCard: FC<ProgramCardProps> = ({
   );
 };
 
-export type { ProgramCardProps };
+export type { ModuleCardProps };
 

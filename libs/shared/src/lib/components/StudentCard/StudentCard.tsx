@@ -6,12 +6,14 @@ import {
   IconButton,
   styled,
   CardContent,
+  Link,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import PersonIcon from '@mui/icons-material/Person';
 import { IconTile } from '../IconTile';
 import { StatusChip } from '../StatusChip';
-import type { ProgramCardProps } from './ProgramCard.types';
+import type { StudentCardProps } from './StudentCard.types';
 
 const StyledCard = styled(Card)(({ theme }) => ({
   height: '100%',
@@ -72,23 +74,23 @@ const FooterBox = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.mode === 'light' ? '#f1f5f9' : '#1f2937'}`,
 }));
 
-export const ProgramCard: FC<ProgramCardProps> = ({
+export const StudentCard: FC<StudentCardProps> = ({
   title,
-  description,
+  subtitle,
   status,
-  duration,
-  modulesCount,
-  studentsCount,
-  date,
+  cohort,
+  phone,
+  birthDate,
   icon,
   onClick,
   onMenuClick,
+  onCohortClick,
 }) => {
   return (
     <StyledCard onClick={onClick}>
       <StyledCardContent>
         <HeaderBox>
-          {icon && <IconTile icon={icon} size="medium" />}
+          {icon || <IconTile icon={<PersonIcon />} size="medium" />}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <StatusChip status={status} />
             {onMenuClick && (
@@ -135,11 +137,11 @@ export const ProgramCard: FC<ProgramCardProps> = ({
             whiteSpace: 'nowrap',
           }}
         >
-          {description}
+          {subtitle}
         </Typography>
 
         <MetadataBox>
-          {duration && (
+          {cohort && (
             <MetadataRow>
               <LabelText
                 variant="caption"
@@ -148,7 +150,45 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Duration
+                Cohort
+              </LabelText>
+              <Link
+                component="button"
+                variant="body2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onCohortClick?.(e);
+                }}
+                sx={{
+                  fontSize: 14,
+                  fontWeight: 500,
+                  color: '#1337ec',
+                  textDecoration: 'none',
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
+                  '&:hover': {
+                    textDecoration: 'underline',
+                  },
+                }}
+              >
+                {cohort}
+              </Link>
+            </MetadataRow>
+          )}
+          {phone && (
+            <MetadataRow>
+              <LabelText
+                variant="caption"
+                sx={{
+                  color: (theme) =>
+                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+                }}
+              >
+                Phone
               </LabelText>
               <Typography
                 variant="body2"
@@ -163,12 +203,12 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   minWidth: 0,
                 }}
               >
-                {duration}
+                {phone}
               </Typography>
             </MetadataRow>
           )}
-          {modulesCount !== undefined && (
-            <MetadataRow alignRight>
+          {birthDate && (
+            <MetadataRow>
               <LabelText
                 variant="caption"
                 sx={{
@@ -176,7 +216,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                     theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
                 }}
               >
-                Modules
+                Born
               </LabelText>
               <Typography
                 variant="body2"
@@ -184,32 +224,14 @@ export const ProgramCard: FC<ProgramCardProps> = ({
                   fontSize: 14,
                   fontWeight: 500,
                   color: (theme) => theme.palette.text.primary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                  minWidth: 0,
                 }}
               >
-                {modulesCount}
-              </Typography>
-            </MetadataRow>
-          )}
-          {studentsCount !== undefined && (
-            <MetadataRow alignRight>
-              <LabelText
-                variant="caption"
-                sx={{
-                  color: (theme) =>
-                    theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
-                }}
-              >
-                Students
-              </LabelText>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: (theme) => theme.palette.text.primary,
-                }}
-              >
-                {studentsCount}
+                {birthDate}
               </Typography>
             </MetadataRow>
           )}
@@ -217,18 +239,7 @@ export const ProgramCard: FC<ProgramCardProps> = ({
       </StyledCardContent>
 
       <FooterBox>
-        {date && (
-          <Typography
-            variant="caption"
-            sx={{
-              fontSize: 12,
-              color: (theme) =>
-                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
-            }}
-          >
-            {date}
-          </Typography>
-        )}
+        <StatusChip status={status} />
         <Box
           sx={{
             display: 'flex',
@@ -247,5 +258,5 @@ export const ProgramCard: FC<ProgramCardProps> = ({
   );
 };
 
-export type { ProgramCardProps };
+export type { StudentCardProps };
 

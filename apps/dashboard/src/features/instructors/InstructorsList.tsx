@@ -1,7 +1,8 @@
 import { FC, useEffect, useState } from 'react';
-import { Box, Grid, IconButton, Typography, Chip, Link } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useServices, LoadingSpinner, EntityCard } from '@talendig/shared';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button, Autocomplete } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import SortIcon from '@mui/icons-material/Sort';
+import { useServices, LoadingSpinner, PageHeader, FiltersBar, InstructorCard, PaginationControls } from '@talendig/shared';
 import type { Instructor, Module, Program, Subject } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format, isFuture } from 'date-fns';
@@ -11,16 +12,26 @@ interface InstructorWithDetails extends Instructor {
   subjects: Subject[];
 }
 
+const ITEMS_PER_PAGE = 9;
+
 export const InstructorsList: FC = () => {
   const { instructorsService, modulesService, programsService, subjectsService } = useServices();
   const navigate = useNavigate();
   const [instructors, setInstructors] = useState<InstructorWithDetails[]>([]);
+  const [filteredInstructors, setFilteredInstructors] = useState<InstructorWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingInstructor, setEditingInstructor] = useState<Instructor | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [technologyFilter, setTechnologyFilter] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadInstructors();
   }, []);
+
+  useEffect(() => {
+    filterInstructors();
+  }, [instructors, searchQuery, statusFilter, technologyFilter]);
 
   const loadInstructors = async () => {
     try {
@@ -85,23 +96,44 @@ export const InstructorsList: FC = () => {
     }
   };
 
-  const handleEditClick = (instructor: Instructor, event: React.MouseEvent) => {
-    event.stopPropagation();
-    setEditingInstructor(instructor);
-    navigate(`/instructors/${instructor.id}/edit`);
+  const filterInstructors = () => {
+    let filtered = [...instructors];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (instructor) =>
+          instructor.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          instructor.email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((instructor) => instructor.status === statusFilter);
+    }
+
+    // Apply technology filter
+    if (technologyFilter.length > 0) {
+      filtered = filtered.filter((instructor) =>
+        technologyFilter.some((tech) => instructor.technologies.includes(tech))
+      );
+    }
+
+    setFilteredInstructors(filtered);
+    setCurrentPage(1);
   };
 
-  const handleDelete = async (id: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this instructor?')) {
-      try {
-        await instructorsService.delete(id);
-        loadInstructors();
-      } catch (error) {
-        console.error('Error deleting instructor:', error);
-      }
-    }
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
+
+  const paginatedInstructors = filteredInstructors.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(filteredInstructors.length / ITEMS_PER_PAGE);
 
   const getCurrentModules = (modules: InstructorWithDetails['modules']) => {
     const now = new Date();
@@ -120,124 +152,128 @@ export const InstructorsList: FC = () => {
     });
   };
 
+  const getAllTechnologies = () => {
+    const techSet = new Set<string>();
+    instructors.forEach((instructor) => {
+      instructor.technologies.forEach((tech) => techSet.add(tech));
+    });
+    return Array.from(techSet).sort();
+  };
+
+  const handleMenuClick = (instructorId: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Menu actions can be added here
+  };
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
     <Box>
-      <Grid container spacing={3}>
-        {instructors.map((instructor) => {
+      <PageHeader
+        title="Instructors"
+        subtitle="Manage and view all instructors"
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => navigate('/instructors/new')}
+          >
+            Create Instructor
+          </Button>
+        }
+      />
+
+      <FiltersBar>
+        <TextField
+          placeholder="Search instructors..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
+          }}
+          sx={{ flex: 1, maxWidth: 400 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="inactive">Inactive</MenuItem>
+          </Select>
+        </FormControl>
+        <Autocomplete
+          multiple
+          size="small"
+          options={getAllTechnologies()}
+          value={technologyFilter}
+          onChange={(_, newValue) => setTechnologyFilter(newValue)}
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label="Technologies"
+              sx={{ minWidth: 200 }}
+            />
+          )}
+        />
+        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <SortIcon />
+        </IconButton>
+      </FiltersBar>
+
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        {paginatedInstructors.map((instructor) => {
           const currentModules = getCurrentModules(instructor.modules);
           const futureModules = getFutureModules(instructor.modules);
           
           return (
             <Grid item xs={12} sm={6} md={4} key={instructor.id}>
-              <EntityCard
+              <InstructorCard
                 title={instructor.fullName}
                 subtitle={instructor.email}
                 status={instructor.status}
-                statusPosition="right"
+                phone={instructor.phone}
+                bio={instructor.shortBio}
+                technologies={instructor.technologies}
+                subjects={instructor.subjects.map((s) => s.name)}
+                modulesCount={currentModules.length}
+                futureModulesCount={futureModules.length}
+                cvUrl={instructor.cvUrl}
                 onClick={() => navigate(`/instructors/${instructor.id}`)}
-                actions={
-                  <Box sx={{ display: 'flex', gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/instructors/${instructor.id}`);
-                      }}
-                    >
-                      <ViewIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleEditClick(instructor, e)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      onClick={(e) => handleDelete(instructor.id, e)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Box>
-                }
-              >
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  {instructor.phone && (
-                    <Typography variant="body2" color="text.secondary">
-                      Phone: <strong>{instructor.phone}</strong>
-                    </Typography>
-                  )}
-                  
-                  {instructor.shortBio && (
-                    <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                      {instructor.shortBio}
-                    </Typography>
-                  )}
-                  
-                  {instructor.technologies.length > 0 && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Technologies:
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {instructor.technologies.slice(0, 3).map((tech) => (
-                          <Chip key={tech} label={tech} size="small" />
-                        ))}
-                        {instructor.technologies.length > 3 && (
-                          <Chip label={`+${instructor.technologies.length - 3}`} size="small" />
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-                  
-                  {instructor.subjects.length > 0 && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        Subjects:
-                      </Typography>
-                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                        {instructor.subjects.slice(0, 3).map((subject) => (
-                          <Chip key={subject.id} label={subject.name} size="small" />
-                        ))}
-                        {instructor.subjects.length > 3 && (
-                          <Chip label={`+${instructor.subjects.length - 3}`} size="small" />
-                        )}
-                      </Box>
-                    </Box>
-                  )}
-                  
-                  {(currentModules.length > 0 || futureModules.length > 0) && (
-                    <Box>
-                      <Typography variant="body2" color="text.secondary">
-                        Modules: <strong>{currentModules.length} current</strong>
-                        {futureModules.length > 0 && `, ${futureModules.length} future`}
-                      </Typography>
-                    </Box>
-                  )}
-                  
-                  {instructor.cvUrl && (
-                    <Typography variant="body2" color="primary">
-                      <Link href={instructor.cvUrl} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                        View CV
-                      </Link>
-                    </Typography>
-                  )}
-                </Box>
-              </EntityCard>
+                onMenuClick={handleMenuClick(instructor.id)}
+              />
             </Grid>
           );
         })}
       </Grid>
-      {instructors.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
+
+      {filteredInstructors.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: (theme) =>
+                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+            }}
+          >
             No instructors found
           </Typography>
         </Box>
+      )}
+
+      {filteredInstructors.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredInstructors.length}
+          onPageChange={handlePageChange}
+        />
       )}
     </Box>
   );

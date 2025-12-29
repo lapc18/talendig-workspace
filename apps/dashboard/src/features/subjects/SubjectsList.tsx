@@ -1,7 +1,8 @@
 import { FC, useEffect, useState } from 'react';
-import { Box, Grid, IconButton, Typography, Chip } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon, Visibility as ViewIcon } from '@mui/icons-material';
-import { useServices, LoadingSpinner, EntityCard } from '@talendig/shared';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button } from '@mui/material';
+import SearchIcon from '@mui/icons-material/Search';
+import SortIcon from '@mui/icons-material/Sort';
+import { useServices, LoadingSpinner, PageHeader, FiltersBar, SubjectCard, PaginationControls } from '@talendig/shared';
 import type { Subject, Module, Program } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,15 +10,26 @@ interface SubjectWithPrograms extends Subject {
   programs: Program[];
 }
 
+const ITEMS_PER_PAGE = 9;
+
 export const SubjectsList: FC = () => {
   const { subjectsService, modulesService, programsService } = useServices();
   const navigate = useNavigate();
   const [subjects, setSubjects] = useState<SubjectWithPrograms[]>([]);
+  const [filteredSubjects, setFilteredSubjects] = useState<SubjectWithPrograms[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     loadSubjects();
   }, []);
+
+  useEffect(() => {
+    filterSubjects();
+  }, [subjects, searchQuery, typeFilter, statusFilter]);
 
   const loadSubjects = async () => {
     try {
@@ -49,16 +61,46 @@ export const SubjectsList: FC = () => {
     }
   };
 
-  const handleDelete = async (id: string, event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this subject?')) {
-      try {
-        await subjectsService.delete(id);
-        loadSubjects();
-      } catch (error) {
-        console.error('Error deleting subject:', error);
-      }
+  const filterSubjects = () => {
+    let filtered = [...subjects];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (subject) =>
+          subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          subject.code.toLowerCase().includes(searchQuery.toLowerCase())
+      );
     }
+
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      filtered = filtered.filter((subject) => subject.type === typeFilter);
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((subject) => subject.status === statusFilter);
+    }
+
+    setFilteredSubjects(filtered);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const paginatedSubjects = filteredSubjects.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const totalPages = Math.ceil(filteredSubjects.length / ITEMS_PER_PAGE);
+
+  const handleMenuClick = (subjectId: string) => (e: React.MouseEvent) => {
+    e.stopPropagation();
+    // Menu actions can be added here
   };
 
   if (loading) {
@@ -67,93 +109,106 @@ export const SubjectsList: FC = () => {
 
   return (
     <Box>
-      <Grid container spacing={3}>
-        {subjects.map((subject) => (
+      <PageHeader
+        title="Subjects"
+        subtitle="Manage and view all subjects"
+        actions={
+          <Button
+            variant="contained"
+            onClick={() => navigate('/subjects/new')}
+          >
+            Create Subject
+          </Button>
+        }
+      />
+
+      <FiltersBar>
+        <TextField
+          placeholder="Search subjects..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          size="small"
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
+          }}
+          sx={{ flex: 1, maxWidth: 400 }}
+        />
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Type</InputLabel>
+          <Select
+            value={typeFilter}
+            label="Type"
+            onChange={(e) => setTypeFilter(e.target.value)}
+          >
+            <MenuItem value="all">All Types</MenuItem>
+            <MenuItem value="Tech">Tech</MenuItem>
+            <MenuItem value="Soft Skills">Soft Skills</MenuItem>
+            <MenuItem value="Project">Project</MenuItem>
+          </Select>
+        </FormControl>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => setStatusFilter(e.target.value)}
+          >
+            <MenuItem value="all">All</MenuItem>
+            <MenuItem value="active">Active</MenuItem>
+            <MenuItem value="inactive">Inactive</MenuItem>
+          </Select>
+        </FormControl>
+        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+          <SortIcon />
+        </IconButton>
+      </FiltersBar>
+
+      <Grid container spacing={3} sx={{ mt: 2 }}>
+        {paginatedSubjects.map((subject) => (
           <Grid item xs={12} sm={6} md={4} key={subject.id}>
-            <EntityCard
+            <SubjectCard
               title={subject.name}
               subtitle={subject.code}
               status={subject.status}
-              statusPosition="right"
+              type={subject.type}
+              defaultHours={subject.defaultHours}
+              description={subject.description}
+              programs={subject.programs.map((p) => p.name)}
               onClick={() => navigate(`/subjects/${subject.id}`)}
-              actions={
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/subjects/${subject.id}`);
-                    }}
-                  >
-                    <ViewIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/subjects/${subject.id}/edit`);
-                    }}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => handleDelete(subject.id, e)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Box>
-              }
-            >
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Typography variant="body2" color="text.secondary">
-                  Type: <strong>{subject.type}</strong>
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Default Hours: <strong>{subject.defaultHours}h</strong>
-                </Typography>
-                {subject.description && (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 0.5 }}>
-                    {subject.description.length > 100
-                      ? `${subject.description.substring(0, 100)}...`
-                      : subject.description}
-                  </Typography>
-                )}
-                {subject.programs.length > 0 && (
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                      Programs ({subject.programs.length}):
-                    </Typography>
-                    <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                      {subject.programs.slice(0, 3).map((program) => (
-                        <Chip
-                          key={program.id}
-                          label={program.name}
-                          size="small"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/programs/${program.id}`);
-                          }}
-                          sx={{ cursor: 'pointer' }}
-                        />
-                      ))}
-                      {subject.programs.length > 3 && (
-                        <Chip label={`+${subject.programs.length - 3}`} size="small" />
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
-            </EntityCard>
+              onMenuClick={handleMenuClick(subject.id)}
+              onProgramClick={(e, index) => {
+                e.stopPropagation();
+                if (subject.programs[index]) {
+                  navigate(`/programs/${subject.programs[index].id}`);
+                }
+              }}
+            />
           </Grid>
         ))}
       </Grid>
-      {subjects.length === 0 && (
-        <Box sx={{ textAlign: 'center', py: 4 }}>
-          <Typography variant="body1" color="text.secondary">
+
+      {filteredSubjects.length === 0 && (
+        <Box sx={{ textAlign: 'center', py: 8 }}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: (theme) =>
+                theme.palette.mode === 'light' ? '#64748b' : '#94a3b8',
+            }}
+          >
             No subjects found
           </Typography>
         </Box>
+      )}
+
+      {filteredSubjects.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={ITEMS_PER_PAGE}
+          totalItems={filteredSubjects.length}
+          onPageChange={handlePageChange}
+        />
       )}
     </Box>
   );

@@ -6,7 +6,7 @@ import {
   TextField,
   Button,
   MenuItem,
-  Paper,
+  Card,
   Typography,
 } from '@mui/material';
 import { useServices } from '@talendig/shared';
@@ -77,7 +77,17 @@ export const StudentForm: FC<StudentFormProps> = ({
   });
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Card
+      sx={{
+        p: 3,
+        borderRadius: 3, // xl
+        backgroundColor: (theme) =>
+          theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+        border: (theme) =>
+          `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+      }}
+    >
       <Typography variant="h6" gutterBottom>
         {isEdit ? 'Edit Student' : 'Create Student'}
       </Typography>
@@ -174,7 +184,7 @@ export const StudentForm: FC<StudentFormProps> = ({
           </Button>
         </Box>
       </Box>
-    </Paper>
+    </Card>
   );
 };
 

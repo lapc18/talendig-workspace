@@ -1,10 +1,10 @@
 import { FC, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Paper, Typography, Button, Chip } from '@mui/material';
+import { Box, Card, Typography, Button } from '@mui/material';
 import { ArrowBack as ArrowBackIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
 import type { Program, Module } from '@talendig/shared';
-import { LoadingSpinner, PageHeader } from '@talendig/shared';
+import { LoadingSpinner, PageHeader, StatusChip } from '@talendig/shared';
 import { ProgramTimeline } from './ProgramTimeline';
 
 export const ProgramDetail: FC = () => {
@@ -67,7 +67,18 @@ export const ProgramDetail: FC = () => {
           </Button>
         }
       />
-      <Paper sx={{ p: 3, mb: 3 }}>
+      <Card
+        sx={{
+          p: 3,
+          mb: 3,
+          borderRadius: 3, // xl
+          backgroundColor: (theme) =>
+            theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+          border: (theme) =>
+            `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+          boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+        }}
+      >
         <Typography variant="h6" gutterBottom>
           Program Details
         </Typography>
@@ -94,14 +105,10 @@ export const ProgramDetail: FC = () => {
             <Typography variant="body2" color="text.secondary">
               Status
             </Typography>
-            <Chip
-              label={program.status}
-              color={program.status === 'active' ? 'success' : 'default'}
-              size="small"
-            />
+            <StatusChip status={program.status} />
           </Box>
         </Box>
-      </Paper>
+      </Card>
       <ProgramTimeline modules={modules} />
     </Box>
   );

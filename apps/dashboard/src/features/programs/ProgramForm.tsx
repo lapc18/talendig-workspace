@@ -6,7 +6,7 @@ import {
   TextField,
   Button,
   MenuItem,
-  Paper,
+  Card,
   Typography,
   Alert,
   IconButton,
@@ -202,7 +202,17 @@ export const ProgramForm: FC<ProgramFormProps> = ({
   };
 
   return (
-    <Paper sx={{ p: 3 }}>
+    <Card
+      sx={{
+        p: 3,
+        borderRadius: 3, // xl
+        backgroundColor: (theme) =>
+          theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+        border: (theme) =>
+          `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+        boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)',
+      }}
+    >
       <Typography variant="h6" gutterBottom>
         {isEdit ? 'Edit Program' : 'Create Program'}
       </Typography>
@@ -304,7 +314,17 @@ export const ProgramForm: FC<ProgramFormProps> = ({
             ) : (
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                 {modules.map((module) => (
-                  <Paper key={module.id} sx={{ p: 2, border: '1px solid', borderColor: 'divider' }}>
+                  <Card
+                    key={module.id}
+                    sx={{
+                      p: 2,
+                      borderRadius: 2, // lg
+                      border: (theme) =>
+                        `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
+                      backgroundColor: (theme) =>
+                        theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
+                    }}
+                  >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                       <Typography variant="subtitle1" fontWeight="bold">
                         Month {module.month}
@@ -371,7 +391,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
                         )}
                       </Box>
                     )}
-                  </Paper>
+                  </Card>
                 ))}
               </Box>
             )}
@@ -387,7 +407,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
           </Button>
         </Box>
       </Box>
-    </Paper>
+    </Card>
   );
 };
 
