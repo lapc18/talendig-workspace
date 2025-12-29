@@ -3,7 +3,7 @@ import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconBu
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import SchoolIcon from '@mui/icons-material/School';
-import { useServices, LoadingSpinner, PageHeader, FiltersBar, ProgramCard, PaginationControls } from '@talendig/shared';
+import { useServices, LoadingSpinner, FiltersBar, ProgramCard, PaginationControls } from '@talendig/shared';
 import type { Program } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -136,19 +136,6 @@ export const ProgramsList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Programs"
-        subtitle="Manage and view all programs"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/programs/new')}
-          >
-            Create Program
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search programs..."
@@ -158,7 +145,7 @@ export const ProgramsList: FC = () => {
           InputProps={{
             startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
           }}
-          sx={{ flex: 1, maxWidth: 400 }}
+          sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Status</InputLabel>
