@@ -1,9 +1,31 @@
-import { FC, useEffect, useState } from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button } from '@mui/material';
+import { FC, useEffect, useState, useCallback } from 'react';
+import {
+  Box,
+  Grid,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  IconButton,
+  Typography,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+} from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
-import { useServices, LoadingSpinner, PageHeader, FiltersBar, CohortCard, PaginationControls } from '@talendig/shared';
-import type { Cohort, Program, Student } from '@talendig/shared';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import {
+  useServices,
+  LoadingSpinner,
+  FiltersBar,
+  CohortCard,
+  PaginationControls,
+} from '@talendig/shared';
+import type { Cohort, CohortCardStatus, Program } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -18,38 +40,36 @@ export const CohortsList: FC = () => {
   const { cohortsService, programsService, studentsService } = useServices();
   const navigate = useNavigate();
   const [cohorts, setCohorts] = useState<CohortWithDetails[]>([]);
-  const [filteredCohorts, setFilteredCohorts] = useState<CohortWithDetails[]>([]);
+  const [filteredCohorts, setFilteredCohorts] = useState<CohortWithDetails[]>(
+    []
+  );
   const [programs, setPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [programFilter, setProgramFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
 
-  useEffect(() => {
-    loadCohorts();
-    loadPrograms();
-  }, []);
-
-  useEffect(() => {
-    filterCohorts();
-  }, [cohorts, searchQuery, statusFilter, programFilter]);
-
-  const loadPrograms = async () => {
+  const loadPrograms = useCallback(async () => {
     try {
       const data = await programsService.getAll();
       setPrograms(data);
     } catch (error) {
       console.error('Error loading programs:', error);
     }
-  };
+  }, [programsService]);
 
-  const loadCohorts = async () => {
+  const loadCohorts = useCallback(async () => {
     try {
       setLoading(true);
       const data = await cohortsService.getAll();
       const activeCohorts = data.filter((cohort) => cohort.status === 'active');
-      
+
       const cohortsWithDetails = await Promise.all(
         activeCohorts.map(async (cohort) => {
           const [program, students] = await Promise.all([
@@ -58,7 +78,7 @@ export const CohortsList: FC = () => {
               : Promise.resolve(null),
             studentsService.getByCohortId(cohort.id).catch(() => []),
           ]);
-          
+
           return {
             ...cohort,
             program: program || undefined,
@@ -66,16 +86,16 @@ export const CohortsList: FC = () => {
           };
         })
       );
-      
+
       setCohorts(cohortsWithDetails);
     } catch (error) {
       console.error('Error loading cohorts:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [cohortsService, studentsService, programsService, setLoading, setCohorts]);
 
-  const filterCohorts = () => {
+  const filterCohorts = useCallback(() => {
     let filtered = [...cohorts];
 
     // Apply search filter
@@ -94,15 +114,104 @@ export const CohortsList: FC = () => {
 
     // Apply program filter
     if (programFilter !== 'all') {
-      filtered = filtered.filter((cohort) => cohort.programId === programFilter);
+      filtered = filtered.filter(
+        (cohort) => cohort.programId === programFilter
+      );
     }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'program':
+          aValue = a.program?.name.toLowerCase() || '';
+          bValue = b.program?.name.toLowerCase() || '';
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'students':
+          aValue = a.studentsCount;
+          bValue = b.studentsCount;
+          break;
+        case 'startDate':
+          aValue = new Date(a.startDate).getTime();
+          bValue = new Date(b.startDate).getTime();
+          break;
+        case 'endDate':
+          aValue = new Date(a.endDate).getTime();
+          bValue = new Date(b.endDate).getTime();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
 
     setFilteredCohorts(filtered);
     setCurrentPage(1);
-  };
+  }, [
+    cohorts,
+    searchQuery,
+    statusFilter,
+    programFilter,
+    sortField,
+    sortDirection,
+  ]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+
+  const getSortLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Name',
+      program: 'Program',
+      status: 'Status',
+      students: 'Students',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+    };
+    return labels[field] || field;
   };
 
   const paginatedCohorts = filteredCohorts.slice(
@@ -117,25 +226,21 @@ export const CohortsList: FC = () => {
     // Menu actions can be added here
   };
 
+  useEffect(() => {
+    loadCohorts();
+    loadPrograms();
+  }, [loadCohorts, loadPrograms]);
+
+  useEffect(() => {
+    filterCohorts();
+  }, [filterCohorts]);
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
   return (
     <Box>
-      <PageHeader
-        title="Cohorts"
-        subtitle="Manage and view all student cohorts"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/cohorts/new')}
-          >
-            Create Cohort
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search cohorts..."
@@ -143,9 +248,13 @@ export const CohortsList: FC = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           size="small"
           InputProps={{
-            startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
+            startAdornment: (
+              <SearchIcon
+                sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }}
+              />
+            ),
           }}
-          sx={{ flex: 1, maxWidth: 400 }}
+          sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Program</InputLabel>
@@ -175,9 +284,82 @@ export const CohortsList: FC = () => {
             <MenuItem value="completed">Completed</MenuItem>
           </Select>
         </FormControl>
-        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          size="small"
+          onClick={handleSortMenuOpen}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+          aria-label="Sort cohorts"
+        >
           <SortIcon />
+          {sortField && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+              }}
+            />
+          )}
         </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={handleSortMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem disabled>
+            <Typography
+              variant="caption"
+              sx={{ fontWeight: 600, textTransform: 'uppercase' }}
+            >
+              Sort by
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {[
+            'name',
+            'program',
+            'status',
+            'students',
+            'startDate',
+            'endDate',
+          ].map((field) => (
+            <MenuItem
+              key={field}
+              onClick={() => handleSortChange(field)}
+              selected={sortField === field}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {sortField === field ? (
+                  sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" color="primary" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" color="primary" />
+                  )
+                ) : null}
+              </ListItemIcon>
+              <ListItemText primary={getSortLabel(field)} />
+            </MenuItem>
+          ))}
+        </Menu>
       </FiltersBar>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
@@ -186,7 +368,7 @@ export const CohortsList: FC = () => {
             <CohortCard
               title={cohort.name}
               subtitle={cohort.program?.name}
-              status={cohort.status}
+              status={cohort.status as CohortCardStatus}
               program={cohort.program?.name}
               studentsCount={cohort.studentsCount}
               startDate={format(new Date(cohort.startDate), 'MMM dd, yyyy')}
@@ -230,4 +412,3 @@ export const CohortsList: FC = () => {
     </Box>
   );
 };
-

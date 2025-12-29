@@ -6,12 +6,14 @@ import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import GroupIcon from '@mui/icons-material/Group';
 import { AppShell, type NavItem } from '@talendig/shared';
 import { useAuth } from '@talendig/shared';
 import type { MainLayoutProps } from './MainLayout.types';
 
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/', icon: <DashboardIcon /> },
+  { label: 'Cohorts', path: '/cohorts', icon: <GroupIcon /> },
   { label: 'Programs', path: '/programs', icon: <SchoolIcon /> },
   { label: 'Modules', path: '/modules', icon: <MenuBookIcon /> },
   { label: 'Students', path: '/students', icon: <PeopleIcon /> },

@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useState, useCallback } from 'react';
 import {
   Box,
   Grid,
@@ -9,11 +9,16 @@ import {
   MenuItem,
   Typography,
   IconButton,
-  Button,
+  Menu,
+  ListItemIcon,
+  ListItemText,
+  Divider,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
-import { useServices, LoadingSpinner, PageHeader, FiltersBar, ModuleCard, PaginationControls } from '@talendig/shared';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import { useServices, LoadingSpinner, FiltersBar, ModuleCard, PaginationControls, type ModuleCardStatus } from '@talendig/shared';
 import type { Module, Program, Instructor, Subject } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -37,6 +42,84 @@ export const ModulesList: FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [sortField, setSortField] = useState<string>('month');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const filterModules = useCallback(() => {
+    let filtered = [...modules];
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (module) =>
+          `Month ${module.month}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          module.program?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          module.instructor?.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          module.subject?.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter((module) => module.status === statusFilter);
+    }
+
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
+
+      switch (sortField) {
+        case 'month':
+          aValue = a.month;
+          bValue = b.month;
+          break;
+        case 'program':
+          aValue = a.program?.name.toLowerCase() || '';
+          bValue = b.program?.name.toLowerCase() || '';
+          break;
+        case 'instructor':
+          aValue = a.instructor?.fullName.toLowerCase() || '';
+          bValue = b.instructor?.fullName.toLowerCase() || '';
+          break;
+        case 'subject':
+          aValue = a.subject?.name.toLowerCase() || '';
+          bValue = b.subject?.name.toLowerCase() || '';
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'startDate':
+          aValue = a.startDate ? new Date(a.startDate).getTime() : 0;
+          bValue = b.startDate ? new Date(b.startDate).getTime() : 0;
+          break;
+        case 'hours':
+          aValue = a.hours || 0;
+          bValue = b.hours || 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
+    setFilteredModules(filtered);
+    setCurrentPage(1);
+  }, [modules, searchQuery, statusFilter, sortField, sortDirection]);
 
   useEffect(() => {
     loadPrograms();
@@ -52,7 +135,7 @@ export const ModulesList: FC = () => {
 
   useEffect(() => {
     filterModules();
-  }, [modules, searchQuery, statusFilter]);
+  }, [filterModules]);
 
   const loadPrograms = async () => {
     try {
@@ -128,31 +211,41 @@ export const ModulesList: FC = () => {
     }
   };
 
-  const filterModules = () => {
-    let filtered = [...modules];
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(
-        (module) =>
-          `Month ${module.month}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          module.program?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          module.instructor?.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          module.subject?.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply status filter
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter((module) => module.status === statusFilter);
-    }
-
-    setFilteredModules(filtered);
-    setCurrentPage(1);
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+
+  const getSortLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      month: 'Month',
+      program: 'Program',
+      instructor: 'Instructor',
+      subject: 'Subject',
+      status: 'Status',
+      startDate: 'Start Date',
+      hours: 'Hours',
+    };
+    return labels[field] || field;
   };
 
   const paginatedModules = filteredModules.slice(
@@ -173,19 +266,6 @@ export const ModulesList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Modules"
-        subtitle="Manage and view all program modules"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/modules/new')}
-          >
-            Create Module
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search modules..."
@@ -195,7 +275,7 @@ export const ModulesList: FC = () => {
           InputProps={{
             startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
           }}
-          sx={{ flex: 1, maxWidth: 400 }}
+          sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Program</InputLabel>
@@ -224,9 +304,72 @@ export const ModulesList: FC = () => {
             <MenuItem value="inactive">Inactive</MenuItem>
           </Select>
         </FormControl>
-        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          size="small"
+          onClick={handleSortMenuOpen}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+          aria-label="Sort modules"
+        >
           <SortIcon />
+          {sortField && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+              }}
+            />
+          )}
         </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={handleSortMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem disabled>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
+              Sort by
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {['month', 'program', 'instructor', 'subject', 'status', 'startDate', 'hours'].map((field) => (
+            <MenuItem
+              key={field}
+              onClick={() => handleSortChange(field)}
+              selected={sortField === field}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {sortField === field ? (
+                  sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" color="primary" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" color="primary" />
+                  )
+                ) : null}
+              </ListItemIcon>
+              <ListItemText primary={getSortLabel(field)} />
+            </MenuItem>
+          ))}
+        </Menu>
       </FiltersBar>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
@@ -235,7 +378,7 @@ export const ModulesList: FC = () => {
             <ModuleCard
               title={`Month ${module.month}`}
               subtitle={module.program?.name}
-              status={module.status}
+              status={module.status as ModuleCardStatus}
               program={module.program?.name}
               instructor={module.instructor?.fullName}
               subject={module.subject ? `${module.subject.name} (${module.subject.code})` : undefined}

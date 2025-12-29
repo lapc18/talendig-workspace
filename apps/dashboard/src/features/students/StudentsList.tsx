@@ -1,10 +1,11 @@
-import { FC, useEffect, useState } from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button } from '@mui/material';
+import { FC, useEffect, useState, useCallback } from 'react';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button, Menu, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useServices, LoadingSpinner, PageHeader, FiltersBar, StudentCard, PaginationControls } from '@talendig/shared';
-import type { Student, Cohort } from '@talendig/shared';
+import type { Student, Cohort, StudentCardStatus } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 
@@ -25,15 +26,14 @@ export const StudentsList: FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [cohortFilter, setCohortFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     loadStudents();
     loadCohorts();
   }, []);
-
-  useEffect(() => {
-    filterStudents();
-  }, [students, searchQuery, statusFilter, cohortFilter]);
 
   const loadCohorts = async () => {
     try {
@@ -72,7 +72,7 @@ export const StudentsList: FC = () => {
     }
   };
 
-  const filterStudents = () => {
+  const filterStudents = useCallback(() => {
     let filtered = [...students];
 
     // Apply search filter
@@ -94,12 +94,86 @@ export const StudentsList: FC = () => {
       filtered = filtered.filter((student) => student.cohortId === cohortFilter);
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.fullName.toLowerCase();
+          bValue = b.fullName.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'birthDate':
+          aValue = a.birthDate ? new Date(a.birthDate).getTime() : 0;
+          bValue = b.birthDate ? new Date(b.birthDate).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
     setFilteredStudents(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  };
+  }, [students, searchQuery, statusFilter, cohortFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    filterStudents();
+  }, [filterStudents]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+
+  const getSortLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Name',
+      email: 'Email',
+      status: 'Status',
+      birthDate: 'Birth Date',
+    };
+    return labels[field] || field;
   };
 
   const paginatedStudents = filteredStudents.slice(
@@ -120,19 +194,6 @@ export const StudentsList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Students"
-        subtitle="Manage and view all students in the system"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/students/new')}
-          >
-            Create Student
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search students..."
@@ -142,7 +203,7 @@ export const StudentsList: FC = () => {
           InputProps={{
             startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
           }}
-          sx={{ flex: 1, maxWidth: 400 }}
+          sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Status</InputLabel>
@@ -171,9 +232,72 @@ export const StudentsList: FC = () => {
             ))}
           </Select>
         </FormControl>
-        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          size="small"
+          onClick={handleSortMenuOpen}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+          aria-label="Sort students"
+        >
           <SortIcon />
+          {sortField && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+              }}
+            />
+          )}
         </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={handleSortMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem disabled>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
+              Sort by
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {['name', 'email', 'status', 'birthDate'].map((field) => (
+            <MenuItem
+              key={field}
+              onClick={() => handleSortChange(field)}
+              selected={sortField === field}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {sortField === field ? (
+                  sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" color="primary" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" color="primary" />
+                  )
+                ) : null}
+              </ListItemIcon>
+              <ListItemText primary={getSortLabel(field)} />
+            </MenuItem>
+          ))}
+        </Menu>
       </FiltersBar>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
@@ -182,7 +306,7 @@ export const StudentsList: FC = () => {
             <StudentCard
               title={student.fullName}
               subtitle={student.email}
-              status={student.status}
+              status={student.status as StudentCardStatus}
               cohort={student.cohort?.name}
               phone={student.phone}
               birthDate={student.birthDate ? format(new Date(student.birthDate), 'MMM dd, yyyy') : undefined}

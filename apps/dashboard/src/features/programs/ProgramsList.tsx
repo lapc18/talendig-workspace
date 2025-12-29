@@ -1,7 +1,9 @@
 import { FC, useEffect, useState, useCallback } from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button } from '@mui/material';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Menu, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import SchoolIcon from '@mui/icons-material/School';
 import { useServices, LoadingSpinner, FiltersBar, ProgramCard, PaginationControls } from '@talendig/shared';
 import type { Program } from '@talendig/shared';
@@ -26,6 +28,9 @@ export const ProgramsList: FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
   const loadPrograms = useCallback(async () => {
     try {
@@ -107,9 +112,57 @@ export const ProgramsList: FC = () => {
       filtered = filtered.filter((program) => program.status === statusFilter);
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.name.toLowerCase();
+          bValue = b.name.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'duration':
+          aValue = a.durationMonths;
+          bValue = b.durationMonths;
+          break;
+        case 'modules':
+          aValue = a.modulesCount;
+          bValue = b.modulesCount;
+          break;
+        case 'students':
+          aValue = a.studentsCount;
+          bValue = b.studentsCount;
+          break;
+        case 'date':
+          aValue = a.startDate ? new Date(a.startDate).getTime() : 0;
+          bValue = b.startDate ? new Date(b.startDate).getTime() : 0;
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
     setFilteredPrograms(filtered);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [programs, searchQuery, statusFilter]);
+  }, [programs, searchQuery, statusFilter, sortField, sortDirection]);
 
   useEffect(() => {
     loadPrograms();
@@ -121,6 +174,38 @@ export const ProgramsList: FC = () => {
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+
+  const getSortLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Name',
+      status: 'Status',
+      duration: 'Duration',
+      modules: 'Modules',
+      students: 'Students',
+      date: 'Start Date',
+    };
+    return labels[field] || field;
   };
 
   const paginatedPrograms = filteredPrograms.slice(
@@ -162,9 +247,72 @@ export const ProgramsList: FC = () => {
             <MenuItem value="pending">Pending</MenuItem>
           </Select>
         </FormControl>
-        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          size="small"
+          onClick={handleSortMenuOpen}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+          aria-label="Sort programs"
+        >
           <SortIcon />
+          {sortField && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+              }}
+            />
+          )}
         </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={handleSortMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem disabled>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
+              Sort by
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {['name', 'status', 'duration', 'modules', 'students', 'date'].map((field) => (
+            <MenuItem
+              key={field}
+              onClick={() => handleSortChange(field)}
+              selected={sortField === field}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {sortField === field ? (
+                  sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" color="primary" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" color="primary" />
+                  )
+                ) : null}
+              </ListItemIcon>
+              <ListItemText primary={getSortLabel(field)} />
+            </MenuItem>
+          ))}
+        </Menu>
       </FiltersBar>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>

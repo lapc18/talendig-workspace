@@ -1,11 +1,13 @@
-import { FC, useEffect, useState } from 'react';
-import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button, Autocomplete } from '@mui/material';
+import { FC, useEffect, useState, useCallback } from 'react';
+import { Box, Grid, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, Typography, Button, Autocomplete, Menu, ListItemIcon, ListItemText, Divider } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { useServices, LoadingSpinner, PageHeader, FiltersBar, InstructorCard, PaginationControls } from '@talendig/shared';
 import type { Instructor, Module, Program, Subject } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
-import { format, isFuture } from 'date-fns';
+import { isFuture } from 'date-fns';
 
 interface InstructorWithDetails extends Instructor {
   modules: Array<Module & { program?: Program; subject?: Subject }>;
@@ -24,14 +26,13 @@ export const InstructorsList: FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [technologyFilter, setTechnologyFilter] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [sortField, setSortField] = useState<string>('name');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
   useEffect(() => {
     loadInstructors();
   }, []);
-
-  useEffect(() => {
-    filterInstructors();
-  }, [instructors, searchQuery, statusFilter, technologyFilter]);
 
   const loadInstructors = async () => {
     try {
@@ -96,7 +97,7 @@ export const InstructorsList: FC = () => {
     }
   };
 
-  const filterInstructors = () => {
+  const filterInstructors = useCallback(() => {
     let filtered = [...instructors];
 
     // Apply search filter
@@ -120,12 +121,100 @@ export const InstructorsList: FC = () => {
       );
     }
 
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let aValue: string | number | undefined;
+      let bValue: string | number | undefined;
+
+      switch (sortField) {
+        case 'name':
+          aValue = a.fullName.toLowerCase();
+          bValue = b.fullName.toLowerCase();
+          break;
+        case 'email':
+          aValue = a.email.toLowerCase();
+          bValue = b.email.toLowerCase();
+          break;
+        case 'status':
+          aValue = a.status;
+          bValue = b.status;
+          break;
+        case 'modules': {
+          const now = new Date();
+          const aCurrentModules = a.modules.filter((m) => {
+            if (!m.startDate || !m.endDate) return false;
+            const start = new Date(m.startDate);
+            const end = new Date(m.endDate);
+            return start <= now && end >= now;
+          });
+          const bCurrentModules = b.modules.filter((m) => {
+            if (!m.startDate || !m.endDate) return false;
+            const start = new Date(m.startDate);
+            const end = new Date(m.endDate);
+            return start <= now && end >= now;
+          });
+          aValue = aCurrentModules.length;
+          bValue = bCurrentModules.length;
+          break;
+        }
+        default:
+          return 0;
+      }
+
+      if (aValue === undefined || aValue === null) return 1;
+      if (bValue === undefined || bValue === null) return -1;
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortDirection === 'asc'
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+
+      return sortDirection === 'asc'
+        ? (aValue as number) - (bValue as number)
+        : (bValue as number) - (aValue as number);
+    });
+
     setFilteredInstructors(filtered);
     setCurrentPage(1);
-  };
+  }, [instructors, searchQuery, statusFilter, technologyFilter, sortField, sortDirection]);
+
+  useEffect(() => {
+    filterInstructors();
+  }, [filterInstructors]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
+  };
+
+  const handleSortMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    setSortMenuAnchor(event.currentTarget);
+  };
+
+  const handleSortMenuClose = () => {
+    setSortMenuAnchor(null);
+  };
+
+  const handleSortChange = (field: string) => {
+    if (sortField === field) {
+      // Toggle direction if same field
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // Set new field with ascending direction
+      setSortField(field);
+      setSortDirection('asc');
+    }
+    handleSortMenuClose();
+  };
+
+  const getSortLabel = (field: string) => {
+    const labels: Record<string, string> = {
+      name: 'Name',
+      email: 'Email',
+      status: 'Status',
+      modules: 'Current Modules',
+    };
+    return labels[field] || field;
   };
 
   const paginatedInstructors = filteredInstructors.slice(
@@ -193,7 +282,7 @@ export const InstructorsList: FC = () => {
           InputProps={{
             startAdornment: <SearchIcon sx={{ fontSize: 20, mr: 1, color: 'text.secondary' }} />,
           }}
-          sx={{ flex: 1, maxWidth: 400 }}
+          sx={{ flex: 1 }}
         />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>Status</InputLabel>
@@ -221,9 +310,72 @@ export const InstructorsList: FC = () => {
             />
           )}
         />
-        <IconButton size="small" sx={{ border: '1px solid', borderColor: 'divider' }}>
+        <IconButton
+          size="small"
+          onClick={handleSortMenuOpen}
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            position: 'relative',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
+          }}
+          aria-label="Sort instructors"
+        >
           <SortIcon />
+          {sortField && (
+            <Box
+              sx={{
+                position: 'absolute',
+                top: 2,
+                right: 2,
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                backgroundColor: 'primary.main',
+              }}
+            />
+          )}
         </IconButton>
+        <Menu
+          anchorEl={sortMenuAnchor}
+          open={Boolean(sortMenuAnchor)}
+          onClose={handleSortMenuClose}
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'right',
+          }}
+          transformOrigin={{
+            vertical: 'top',
+            horizontal: 'right',
+          }}
+        >
+          <MenuItem disabled>
+            <Typography variant="caption" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
+              Sort by
+            </Typography>
+          </MenuItem>
+          <Divider />
+          {['name', 'email', 'status', 'modules'].map((field) => (
+            <MenuItem
+              key={field}
+              onClick={() => handleSortChange(field)}
+              selected={sortField === field}
+            >
+              <ListItemIcon sx={{ minWidth: 36 }}>
+                {sortField === field ? (
+                  sortDirection === 'asc' ? (
+                    <ArrowUpwardIcon fontSize="small" color="primary" />
+                  ) : (
+                    <ArrowDownwardIcon fontSize="small" color="primary" />
+                  )
+                ) : null}
+              </ListItemIcon>
+              <ListItemText primary={getSortLabel(field)} />
+            </MenuItem>
+          ))}
+        </Menu>
       </FiltersBar>
 
       <Grid container spacing={3} sx={{ mt: 2 }}>
