@@ -140,7 +140,7 @@ export const ModulesList: FC = () => {
   const loadPrograms = async () => {
     try {
       const data = await programsService.getAll();
-      setPrograms(data);
+      setPrograms(data.filter(p => p.status === 'active'));
     } catch (error) {
       console.error('Error loading programs:', error);
     }

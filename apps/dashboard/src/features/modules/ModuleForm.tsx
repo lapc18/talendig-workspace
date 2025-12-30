@@ -60,7 +60,7 @@ export const ModuleForm: FC<ModuleFormProps> = ({
         instructorsService.getAll(),
         subjectsService.getAll(),
       ]);
-      setPrograms(programsData);
+      setPrograms(programsData.filter(p => p.status === 'active'));
       setInstructors(instructorsData.filter((i) => i.status === 'active'));
       setSubjects(subjectsData.filter((s) => s.status === 'active'));
     } catch (error) {
