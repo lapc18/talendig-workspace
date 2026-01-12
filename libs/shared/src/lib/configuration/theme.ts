@@ -333,62 +333,99 @@ const createThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => {
         root: {
           '& .MuiOutlinedInput-root': {
               borderRadius: designSystem.radii.lg,
-              height: 40,
               backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
               color: isLight ? '#0f172a' : '#ffffff',
+              '&:not(.MuiInputBase-multiline)': {
+                height: 40,
+              },
+              '&.MuiInputBase-multiline': {
+                padding: '8px 14px',
+                minHeight: 40,
+              },
               '& fieldset': {
-                border: 'none',
+                borderColor: isLight ? '#e2e8f0' : '#334155',
               },
-              '&:hover': {
-                backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
+              '&:hover fieldset': {
+                borderColor: isLight ? '#cbd5e1' : '#475569',
               },
-              '&.Mui-focused': {
-                backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
-                boxShadow: `0 0 0 3px ${designSystem.colors.semantic.focusRing}`,
+              '&.Mui-focused fieldset': {
+                borderColor: designSystem.colors.primary,
+                borderWidth: 2,
               },
-              '& input::placeholder': {
+              '&.Mui-error fieldset': {
+                borderColor: '#ef4444',
+              },
+              '&.Mui-disabled': {
+                backgroundColor: isLight ? '#f8fafc' : '#1e293b',
+                '& fieldset': {
+                  borderColor: isLight ? '#e2e8f0' : '#334155',
+                },
+              },
+              '& input::placeholder, & textarea::placeholder': {
                 color: isLight ? '#94a3b8' : '#64748b',
                 opacity: 1,
-          },
+              },
             },
           },
         },
       },
-      MuiSelect: {
-        styleOverrides: {
-          root: {
-            borderRadius: designSystem.radii.lg,
-            height: 44,
-            paddingLeft: 16,
-            paddingRight: 16,
-            backgroundColor: isLight ? '#f6f6f8' : '#101322',
-            border: `1px solid ${isLight ? '#e2e8f0' : '#334155'}`,
-            '&:hover': {
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          borderRadius: designSystem.radii.lg,
+          height: 40,
+          backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
+          color: isLight ? '#0f172a' : '#ffffff',
+          '& .MuiOutlinedInput-notchedOutline': {
+            borderColor: isLight ? '#e2e8f0' : '#334155',
+          },
+          '&:hover .MuiOutlinedInput-notchedOutline': {
+            borderColor: isLight ? '#cbd5e1' : '#475569',
+          },
+          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+            borderColor: designSystem.colors.primary,
+            borderWidth: 2,
+          },
+          '&.Mui-error .MuiOutlinedInput-notchedOutline': {
+            borderColor: '#ef4444',
+          },
+          '&.Mui-disabled': {
+            backgroundColor: isLight ? '#f8fafc' : '#1e293b',
+            '& .MuiOutlinedInput-notchedOutline': {
               borderColor: isLight ? '#e2e8f0' : '#334155',
             },
-            '&.Mui-focused': {
+          },
+        },
+      },
+    },
+    MuiInputBase: {
+      styleOverrides: {
+        root: {
+          borderRadius: designSystem.radii.lg,
+          backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
+          color: isLight ? '#0f172a' : '#ffffff',
+          '& input::placeholder': {
+            color: isLight ? '#94a3b8' : '#64748b',
+            opacity: 1,
+          },
+          '&.MuiOutlinedInput-root': {
+            '& fieldset': {
+              borderColor: isLight ? '#e2e8f0' : '#334155',
+            },
+            '&:hover fieldset': {
+              borderColor: isLight ? '#cbd5e1' : '#475569',
+            },
+            '&.Mui-focused fieldset': {
               borderColor: designSystem.colors.primary,
-              boxShadow: `0 0 0 3px rgba(19,55,236,0.20)`,
+              borderWidth: 2,
+            },
+            '&.Mui-error fieldset': {
+              borderColor: '#ef4444',
             },
           },
         },
       },
-      MuiInputBase: {
-        styleOverrides: {
-          root: {
-            borderRadius: designSystem.radii.lg,
-            height: 40,
-            paddingLeft: 16,
-            paddingRight: 16,
-            backgroundColor: isLight ? '#f1f5f9' : '#1f2937',
-            color: isLight ? '#0f172a' : '#ffffff',
-            '& input::placeholder': {
-              color: isLight ? '#94a3b8' : '#64748b',
-              opacity: 1,
-            },
-          },
-        },
-      },
+    },
       MuiIconButton: {
         styleOverrides: {
           root: {
