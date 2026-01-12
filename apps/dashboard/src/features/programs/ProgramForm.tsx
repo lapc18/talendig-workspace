@@ -12,6 +12,7 @@ import {
   IconButton,
   Divider,
   Chip,
+  CircularProgress,
 } from '@mui/material';
 import { Delete as DeleteIcon, Add as AddIcon } from '@mui/icons-material';
 import { useServices } from '@talendig/shared';
@@ -49,6 +50,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
   const [instructors, setInstructors] = useState<Instructor[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loadingModules, setLoadingModules] = useState(false);
+  const [updatingModules, setUpdatingModules] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isEdit && program?.id) {
@@ -102,6 +104,49 @@ export const ProgramForm: FC<ProgramFormProps> = ({
     } finally {
       setLoadingModules(false);
     }
+  };
+
+  const updateModuleDetails = async (
+    moduleId: string,
+    field: 'instructorId' | 'subjectId',
+    value: string
+  ) => {
+    // Fetch only the new instructor/subject details if value is provided
+    const [instructor, subject] = await Promise.all([
+      field === 'instructorId' && value
+        ? instructorsService.getById(value).catch(() => null)
+        : Promise.resolve(null),
+      field === 'subjectId' && value
+        ? subjectsService.getById(value).catch(() => null)
+        : Promise.resolve(null),
+    ]);
+
+    // Update only the affected module in state
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if (module.id === moduleId) {
+          return {
+            ...module,
+            [field]: value || undefined,
+            // Clear instructor if instructorId is being cleared, otherwise update or keep existing
+            instructor:
+              field === 'instructorId'
+                ? value
+                  ? instructor || undefined
+                  : undefined
+                : module.instructor,
+            // Clear subject if subjectId is being cleared, otherwise update or keep existing
+            subject:
+              field === 'subjectId'
+                ? value
+                  ? subject || undefined
+                  : undefined
+                : module.subject,
+          };
+        }
+        return module;
+      })
+    );
   };
 
   const checkForModules = async () => {
@@ -190,14 +235,73 @@ export const ProgramForm: FC<ProgramFormProps> = ({
     field: 'instructorId' | 'subjectId' | 'hours',
     value: string | number
   ) => {
+    // Find the current module state for rollback
+    const currentModule = modules.find((m) => m.id === moduleId);
+    if (!currentModule) return;
+
+    // Store previous values for rollback
+    const previousValue = currentModule[field];
+    const previousInstructor = currentModule.instructor;
+    const previousSubject = currentModule.subject;
+
+    // 1. Optimistically update local state
+    setModules((prevModules) =>
+      prevModules.map((module) => {
+        if (module.id === moduleId) {
+          return {
+            ...module,
+            [field]: value,
+            // Clear instructor/subject if field is being cleared
+            instructor: field === 'instructorId' && !value ? undefined : module.instructor,
+            subject: field === 'subjectId' && !value ? undefined : module.subject,
+          };
+        }
+        return module;
+      })
+    );
+
+    // 2. Mark module as updating
+    setUpdatingModules((prev) => new Set(prev).add(moduleId));
+
     try {
+      // 3. Update database in background
       await modulesService.update({
         id: moduleId,
         [field]: value,
       });
-      await loadModules();
+
+      // 4. Fetch new details if instructor/subject changed
+      if (field === 'instructorId' || field === 'subjectId') {
+        await updateModuleDetails(moduleId, field, value as string);
+      }
     } catch (error) {
+      // 5. Handle errors with rollback
       console.error('Error updating module:', error);
+      
+      // Rollback optimistic update
+      setModules((prevModules) =>
+        prevModules.map((module) => {
+          if (module.id === moduleId) {
+            return {
+              ...module,
+              [field]: previousValue,
+              instructor: previousInstructor,
+              subject: previousSubject,
+            };
+          }
+          return module;
+        })
+      );
+
+      // Show error to user (could be enhanced with a toast notification)
+      alert(`Failed to update module. Please try again.`);
+    } finally {
+      // Remove updating state
+      setUpdatingModules((prev) => {
+        const next = new Set(prev);
+        next.delete(moduleId);
+        return next;
+      });
     }
   };
 
@@ -326,13 +430,19 @@ export const ProgramForm: FC<ProgramFormProps> = ({
                     }}
                   >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        Month {module.month}
-                      </Typography>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="subtitle1" fontWeight="bold">
+                          Month {module.month}
+                        </Typography>
+                        {updatingModules.has(module.id) && (
+                          <CircularProgress size={16} sx={{ color: 'primary.main' }} />
+                        )}
+                      </Box>
                       <IconButton
                         size="small"
                         color="error"
                         onClick={() => handleDeleteModule(module.id)}
+                        disabled={updatingModules.has(module.id)}
                       >
                         <DeleteIcon />
                       </IconButton>
@@ -345,6 +455,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
                         size="small"
                         value={module.hours}
                         onChange={(e) => handleUpdateModule(module.id, 'hours', parseInt(e.target.value) || 0)}
+                        disabled={updatingModules.has(module.id)}
                         sx={{ minWidth: 120 }}
                       />
                       
@@ -354,6 +465,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
                         size="small"
                         value={module.instructorId || ''}
                         onChange={(e) => handleUpdateModule(module.id, 'instructorId', e.target.value)}
+                        disabled={updatingModules.has(module.id)}
                         sx={{ minWidth: 200 }}
                       >
                         <MenuItem value="">None</MenuItem>
@@ -370,6 +482,7 @@ export const ProgramForm: FC<ProgramFormProps> = ({
                         size="small"
                         value={module.subjectId || ''}
                         onChange={(e) => handleUpdateModule(module.id, 'subjectId', e.target.value)}
+                        disabled={updatingModules.has(module.id)}
                         sx={{ minWidth: 200 }}
                       >
                         <MenuItem value="">None</MenuItem>

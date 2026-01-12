@@ -4,8 +4,8 @@ import SearchIcon from '@mui/icons-material/Search';
 import SortIcon from '@mui/icons-material/Sort';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import { useServices, LoadingSpinner, PageHeader, FiltersBar, SubjectCard, PaginationControls } from '@talendig/shared';
-import type { Subject, Module, Program } from '@talendig/shared';
+import { useServices, LoadingSpinner, FiltersBar, SubjectCard, PaginationControls } from '@talendig/shared';
+import type { Subject, Program, SubjectCardStatus } from '@talendig/shared';
 import { useNavigate } from 'react-router-dom';
 
 interface SubjectWithPrograms extends Subject {
@@ -27,44 +27,6 @@ export const SubjectsList: FC = () => {
   const [sortField, setSortField] = useState<string>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
-
-  useEffect(() => {
-    loadSubjects();
-  }, []);
-
-  useEffect(() => {
-    filterSubjects();
-  }, [filterSubjects]);
-
-  const loadSubjects = async () => {
-    try {
-      setLoading(true);
-      const subjectsData = await subjectsService.getAll();
-      const allModules = await modulesService.getAll();
-      
-      const subjectsWithPrograms = await Promise.all(
-        subjectsData.map(async (subject) => {
-          const modulesWithSubject = allModules.filter((m) => m.subjectId === subject.id);
-          const programIds = new Set(modulesWithSubject.map((m) => m.programId));
-          
-          const programs = await Promise.all(
-            Array.from(programIds).map((id) => programsService.getById(id).catch(() => null))
-          );
-          
-          return {
-            ...subject,
-            programs: programs.filter((p): p is Program => !!p),
-          };
-        })
-      );
-      
-      setSubjects(subjectsWithPrograms);
-    } catch (error) {
-      console.error('Error loading subjects:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filterSubjects = useCallback(() => {
     let filtered = [...subjects];
@@ -136,6 +98,44 @@ export const SubjectsList: FC = () => {
     setCurrentPage(1);
   }, [subjects, searchQuery, typeFilter, statusFilter, sortField, sortDirection]);
 
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  useEffect(() => {
+    filterSubjects();
+  }, [filterSubjects]);
+
+  const loadSubjects = async () => {
+    try {
+      setLoading(true);
+      const subjectsData = await subjectsService.getAll();
+      const allModules = await modulesService.getAll();
+      
+      const subjectsWithPrograms = await Promise.all(
+        subjectsData.map(async (subject) => {
+          const modulesWithSubject = allModules.filter((m) => m.subjectId === subject.id);
+          const programIds = new Set(modulesWithSubject.map((m) => m.programId));
+          
+          const programs = await Promise.all(
+            Array.from(programIds).map((id) => programsService.getById(id).catch(() => null))
+          );
+          
+          return {
+            ...subject,
+            programs: programs.filter((p): p is Program => !!p),
+          };
+        })
+      );
+      
+      setSubjects(subjectsWithPrograms);
+    } catch (error) {
+      console.error('Error loading subjects:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -189,19 +189,6 @@ export const SubjectsList: FC = () => {
 
   return (
     <Box>
-      <PageHeader
-        title="Subjects"
-        subtitle="Manage and view all subjects"
-        actions={
-          <Button
-            variant="contained"
-            onClick={() => navigate('/subjects/new')}
-          >
-            Create Subject
-          </Button>
-        }
-      />
-
       <FiltersBar>
         <TextField
           placeholder="Search subjects..."
@@ -312,7 +299,7 @@ export const SubjectsList: FC = () => {
             <SubjectCard
               title={subject.name}
               subtitle={subject.code}
-              status={subject.status}
+              status={subject.status as SubjectCardStatus}
               type={subject.type}
               defaultHours={subject.defaultHours}
               description={subject.description}

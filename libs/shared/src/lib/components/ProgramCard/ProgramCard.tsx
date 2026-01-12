@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { FC, useState } from 'react';
 import {
   Card,
   Box,
@@ -6,9 +6,14 @@ import {
   IconButton,
   styled,
   CardContent,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import EditIcon from '@mui/icons-material/Edit';
 import { IconTile } from '../IconTile';
 import { StatusChip } from '../StatusChip';
 import type { ProgramCardProps } from './ProgramCard.types';
@@ -83,7 +88,25 @@ export const ProgramCard: FC<ProgramCardProps> = ({
   icon,
   onClick,
   onMenuClick,
+  onEditClick,
 }) => {
+  const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null);
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
+    event.stopPropagation();
+    setMenuAnchor(event.currentTarget);
+    onMenuClick?.(event);
+  };
+
+  const handleMenuClose = () => {
+    setMenuAnchor(null);
+  };
+
+  const handleEditClick = () => {
+    handleMenuClose();
+    onEditClick?.();
+  };
+
   return (
     <StyledCard onClick={onClick}>
       <StyledCardContent>
@@ -91,17 +114,39 @@ export const ProgramCard: FC<ProgramCardProps> = ({
           {icon && <IconTile icon={icon} size="medium" />}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <StatusChip status={status} />
-            {onMenuClick && (
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMenuClick(e);
-                }}
-                sx={{ padding: 0.5 }}
-              >
-                <MoreVertIcon sx={{ fontSize: 20 }} />
-              </IconButton>
+            {(onMenuClick || onEditClick) && (
+              <>
+                <IconButton
+                  size="small"
+                  onClick={handleMenuOpen}
+                  sx={{ padding: 0.5 }}
+                >
+                  <MoreVertIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+                <Menu
+                  anchorEl={menuAnchor}
+                  open={Boolean(menuAnchor)}
+                  onClose={handleMenuClose}
+                  anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                  }}
+                  transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'right',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {onEditClick && (
+                    <MenuItem onClick={handleEditClick}>
+                      <ListItemIcon>
+                        <EditIcon fontSize="small" />
+                      </ListItemIcon>
+                      <ListItemText>Edit</ListItemText>
+                    </MenuItem>
+                  )}
+                </Menu>
+              </>
             )}
           </Box>
         </HeaderBox>

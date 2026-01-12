@@ -13,5 +13,6 @@ export interface ProgramCardProps {
   icon?: ReactNode;
   onClick?: () => void;
   onMenuClick?: (event: React.MouseEvent) => void;
+  onEditClick?: () => void;
 }
 

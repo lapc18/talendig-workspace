@@ -332,10 +332,7 @@ export const ProgramsList: FC = () => {
               }
               icon={<SchoolIcon />}
               onClick={() => navigate(`/programs/${program.id}`)}
-              onMenuClick={(e) => {
-                      e.stopPropagation();
-                // Handle menu click
-              }}
+              onEditClick={() => navigate(`/programs/${program.id}/edit`)}
             />
           </Grid>
         ))}

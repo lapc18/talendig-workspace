@@ -5,6 +5,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import PeopleIcon from '@mui/icons-material/People';
 import PersonIcon from '@mui/icons-material/Person';
 import MenuBookIcon from '@mui/icons-material/MenuBook';
+import SubjectIcon from '@mui/icons-material/Subject';
 // import ScheduleIcon from '@mui/icons-material/Schedule';
 import GroupIcon from '@mui/icons-material/Group';
 import { AppShell, type NavItem } from '@talendig/shared';
@@ -16,6 +17,7 @@ const navItems: NavItem[] = [
   { label: 'Cohorts', path: '/cohorts', icon: <GroupIcon /> },
   { label: 'Programs', path: '/programs', icon: <SchoolIcon /> },
   { label: 'Modules', path: '/modules', icon: <MenuBookIcon /> },
+  { label: 'Subjects', path: '/subjects', icon: <SubjectIcon /> },
   { label: 'Students', path: '/students', icon: <PeopleIcon /> },
   { label: 'Instructors', path: '/instructors', icon: <PersonIcon /> },
   // { label: 'Schedule', path: '/schedule', icon: <ScheduleIcon /> }, // TODO: Add schedule feature
