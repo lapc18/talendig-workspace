@@ -4,8 +4,8 @@
   "license": "MIT",
   "packageManager": "pnpm@10.10.0",
   "scripts": {
-    "dev:dashboard": "nx dev dashboard",
-    "build:dashboard": "nx build dashboard",
+    "dev:dashboard": "nx dev dashboard --skip-nx-cache",
+    "build:dashboard": "nx build dashboard --skip-nx-cache",
     "test:dashboard": "nx test dashboard",
     "lint:dashboard": "nx lint dashboard",
     "typecheck:dashboard": "nx typecheck dashboard"
@@ -16,6 +16,7 @@
     "@emotion/styled": "^11.14.1",
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
+    "@mui/x-charts": "^8.24.0",
     "date-fns": "^3.6.0",
     "firebase": "^10.14.1",
     "formik": "^2.4.9",
