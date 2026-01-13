@@ -1,12 +1,19 @@
 import { FC } from 'react';
-import styles from './app.module.scss';
+import { ThemeProvider, CssBaseline } from '@mui/material';
+import { talendigTheme, ServicesProvider } from '@talendig/shared';
+import { db } from '../firebase/config';
+import { Navbar } from '../components/Navbar';
+import { ActiveClassesList } from '../features/ActiveClassesList';
 
 export const App: FC = () => {
   return (
-    <div className={styles.container}>
-      <h1>Schedule App</h1>
-      <p>Welcome to the Schedule application.</p>
-    </div>
+    <ThemeProvider theme={talendigTheme}>
+      <CssBaseline />
+      <ServicesProvider db={db}>
+        <Navbar />
+        <ActiveClassesList />
+      </ServicesProvider>
+    </ThemeProvider>
   );
 };
 

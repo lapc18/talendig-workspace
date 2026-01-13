@@ -11,6 +11,7 @@ const StyledFiltersBar = styled(Box)(({ theme }) => ({
   backgroundColor: theme.palette.mode === 'light' ? '#ffffff' : '#0f172a',
   border: `1px solid ${theme.palette.mode === 'light' ? '#e2e8f0' : '#1f2937'}`,
   boxShadow: '0 1px 2px rgba(15, 23, 42, 0.06)', // sm shadow
+  marginBottom: '1rem !important',
 }));
 
 export const FiltersBar: FC<FiltersBarProps> = ({ children }) => {
