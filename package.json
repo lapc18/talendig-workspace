@@ -8,7 +8,12 @@
     "build:dashboard": "nx build dashboard --skip-nx-cache",
     "test:dashboard": "nx test dashboard",
     "lint:dashboard": "nx lint dashboard",
-    "typecheck:dashboard": "nx typecheck dashboard"
+    "typecheck:dashboard": "nx typecheck dashboard",
+    "dev:schedule": "nx dev schedule --skip-nx-cache",
+    "build:schedule": "nx build schedule --skip-nx-cache",
+    "test:schedule": "nx test schedule",
+    "lint:schedule": "nx lint schedule",
+    "typecheck:schedule": "nx typecheck schedule"
   },
   "private": true,
   "dependencies": {
