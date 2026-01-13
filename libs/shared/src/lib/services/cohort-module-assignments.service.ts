@@ -43,6 +43,11 @@ export class CohortModuleAssignmentsService {
     });
   }
 
+  async createBatch(inputs: CreateCohortModuleAssignmentInput[]): Promise<CohortModuleAssignment[]> {
+    const promises = inputs.map((input) => this.create(input));
+    return Promise.all(promises);
+  }
+
   async update(input: UpdateCohortModuleAssignmentInput): Promise<void> {
     const { id, ...data } = input;
     return this.firestoreService.update<CohortModuleAssignment>(COLLECTION_NAME, id, data);

@@ -3,16 +3,22 @@ import type { Cohort, CreateCohortInput, UpdateCohortInput } from '../types';
 import { Firestore } from 'firebase/firestore';
 import { firestoreHelpers } from './firestore.service';
 import { ProgramsService } from './programs.service';
+import { ModulesService } from './modules.service';
+import { CohortModuleAssignmentsService } from './cohort-module-assignments.service';
 
 const COLLECTION_NAME = 'cohorts';
 
 export class CohortsService {
   private firestoreService: FirestoreService;
   private programsService: ProgramsService;
+  private modulesService: ModulesService;
+  private cohortModuleAssignmentsService: CohortModuleAssignmentsService;
 
   constructor(db: Firestore) {
     this.firestoreService = new FirestoreService(db);
     this.programsService = new ProgramsService(db);
+    this.modulesService = new ModulesService(db);
+    this.cohortModuleAssignmentsService = new CohortModuleAssignmentsService(db);
   }
 
   async getById(id: string): Promise<Cohort | null> {
@@ -64,6 +70,47 @@ export class CohortsService {
     return this.firestoreService.update<Cohort>(COLLECTION_NAME, id, {
       status: 'inactive',
     });
+  }
+
+  async inheritProgramTimeline(cohortId: string, programId: string): Promise<void> {
+    // Validate cohort exists
+    const cohort = await this.getById(cohortId);
+    if (!cohort) {
+      throw new Error(`Cohort with id ${cohortId} not found`);
+    }
+
+    // Validate program exists
+    const program = await this.programsService.getById(programId);
+    if (!program) {
+      throw new Error(`Program with id ${programId} not found`);
+    }
+
+    // Get all modules for the program
+    const modules = await this.modulesService.getByProgramId(programId);
+    
+    if (modules.length === 0) {
+      // No modules to inherit, but don't throw an error - just return
+      return;
+    }
+
+    // Get existing assignments for this cohort to avoid duplicates
+    const existingAssignments = await this.cohortModuleAssignmentsService.getByCohortId(cohortId);
+    const existingModuleIds = new Set(existingAssignments.map(a => a.moduleId));
+
+    // Create assignments for modules that don't already have assignments
+    const assignmentsToCreate = modules
+      .filter(module => !existingModuleIds.has(module.id))
+      .map(module => ({
+        cohortId,
+        moduleId: module.id,
+        instructorId: module.instructorId,
+        subjectId: module.subjectId,
+        status: 'active' as const,
+      }));
+
+    if (assignmentsToCreate.length > 0) {
+      await this.cohortModuleAssignmentsService.createBatch(assignmentsToCreate);
+    }
   }
 }
 

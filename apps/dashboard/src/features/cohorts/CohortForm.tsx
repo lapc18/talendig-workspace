@@ -46,6 +46,8 @@ export const CohortForm: FC<CohortFormProps> = ({
   const [allStudents, setAllStudents] = useState<Student[]>([]);
   const [cohortStudents, setCohortStudents] = useState<Student[]>([]);
   const [selectedStudentIds, setSelectedStudentIds] = useState<Set<string>>(new Set());
+  const [inheritTimeline, setInheritTimeline] = useState(false);
+  const [inheriting, setInheriting] = useState(false);
   const isEdit = !!cohort;
 
   useEffect(() => {
@@ -134,6 +136,19 @@ export const CohortForm: FC<CohortFormProps> = ({
         } else {
           const newCohort = await cohortsService.create(values);
           cohortId = newCohort.id;
+          
+          // Inherit program timeline if checkbox is checked
+          if (inheritTimeline && values.programId) {
+            try {
+              setInheriting(true);
+              await cohortsService.inheritProgramTimeline(cohortId, values.programId);
+            } catch (error) {
+              console.error('Error inheriting program timeline:', error);
+              // Don't fail cohort creation if inheritance fails
+            } finally {
+              setInheriting(false);
+            }
+          }
         }
         
         // Update student assignments
@@ -214,6 +229,19 @@ export const CohortForm: FC<CohortFormProps> = ({
             </MenuItem>
           ))}
         </TextField>
+        {!isEdit && (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={inheritTimeline}
+                onChange={(e) => setInheritTimeline(e.target.checked)}
+                disabled={!formik.values.programId || inheriting}
+              />
+            }
+            label="Inherit Program Timeline"
+            sx={{ mt: 1, mb: 1 }}
+          />
+        )}
         <TextField
           fullWidth
           id="startDate"
@@ -339,11 +367,11 @@ export const CohortForm: FC<CohortFormProps> = ({
         )}
         
         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'flex-end' }}>
-          <Button variant="outlined" onClick={onCancel}>
+          <Button variant="outlined" onClick={onCancel} disabled={inheriting}>
             Cancel
           </Button>
-          <Button type="submit" variant="contained">
-            {isEdit ? 'Update' : 'Create'}
+          <Button type="submit" variant="contained" disabled={inheriting}>
+            {inheriting ? 'Creating...' : isEdit ? 'Update' : 'Create'}
           </Button>
         </Box>
       </Box>

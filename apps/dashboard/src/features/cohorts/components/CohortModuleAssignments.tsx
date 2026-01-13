@@ -78,20 +78,14 @@ export const CohortModuleAssignments: FC<CohortModuleAssignmentsProps> = ({
         // Update existing assignment
         await cohortModuleAssignmentsService.update({
           id: existingAssignment.id,
-          subjectId,
+          subjectId: subjectId || undefined,
         });
       } else {
-        // Create new assignment - need instructor too
-        const instructorId = instructors.length > 0 ? instructors[0].id : '';
-        if (!instructorId) {
-          console.error('No instructors available');
-          return;
-        }
+        // Create new assignment - instructor is optional
         await cohortModuleAssignmentsService.create({
           cohortId,
           moduleId,
-          subjectId,
-          instructorId,
+          subjectId: subjectId || undefined,
         });
       }
       await loadData();
@@ -112,20 +106,14 @@ export const CohortModuleAssignments: FC<CohortModuleAssignmentsProps> = ({
         // Update existing assignment
         await cohortModuleAssignmentsService.update({
           id: existingAssignment.id,
-          instructorId,
+          instructorId: instructorId || undefined,
         });
       } else {
-        // Create new assignment - need subject too
-        const subjectId = subjects.length > 0 ? subjects[0].id : '';
-        if (!subjectId) {
-          console.error('No subjects available');
-          return;
-        }
+        // Create new assignment - subject is optional
         await cohortModuleAssignmentsService.create({
           cohortId,
           moduleId,
-          subjectId,
-          instructorId,
+          instructorId: instructorId || undefined,
         });
       }
       await loadData();
