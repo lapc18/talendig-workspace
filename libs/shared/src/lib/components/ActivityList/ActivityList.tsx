@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Card, CardHeader, Box, Typography, Link, styled } from '@mui/material';
+import { Card, CardHeader, Box, Link, styled } from '@mui/material';
 import type { ActivityListProps } from './ActivityList.types';
 
 const StyledCard = styled(Card)({

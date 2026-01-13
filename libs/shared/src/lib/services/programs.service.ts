@@ -1,7 +1,6 @@
 import { FirestoreService } from './firestore.service';
 import type { Program, CreateProgramInput, UpdateProgramInput } from '../types';
 import { Firestore } from 'firebase/firestore';
-import { firestoreHelpers } from './firestore.service';
 
 const COLLECTION_NAME = 'programs';
 

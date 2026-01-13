@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Box, Typography, Stack, styled } from '@mui/material';
+import { Box, Typography, styled } from '@mui/material';
 import { StatusChip } from '../StatusChip';
 import type { ActivityRowProps } from './ActivityRow.types';
 

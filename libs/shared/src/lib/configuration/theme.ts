@@ -1,4 +1,4 @@
-import { createTheme, Theme, ThemeOptions } from '@mui/material/styles';
+import { createTheme, ThemeOptions, Shadows } from '@mui/material/styles';
 
 // Design system tokens
 const designSystem = {
@@ -250,8 +250,7 @@ const createThemeOptions = (mode: 'light' | 'dark'): ThemeOptions => {
       '0 84px 176px rgba(15, 23, 42, 0.52)',
       '0 88px 184px rgba(15, 23, 42, 0.54)',
       '0 92px 192px rgba(15, 23, 42, 0.56)',
-      '0 96px 200px rgba(15, 23, 42, 0.58)',
-    ],
+    ] as Shadows,
   components: {
     MuiButton: {
       styleOverrides: {

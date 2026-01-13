@@ -124,7 +124,10 @@ export const Topbar: FC<TopbarProps> = ({
             <StyledSearchField
               placeholder="Search..."
               value={searchValue}
-              onChange={(e) => onSearchChange(e.target.value)}
+              onChange={(e) => {
+                const target = e.target as HTMLInputElement;
+                onSearchChange(target.value);
+              }}
               InputProps={{
                 startAdornment: (
                   <SearchIcon

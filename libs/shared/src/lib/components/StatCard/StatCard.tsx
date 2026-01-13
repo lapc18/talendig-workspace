@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Card, Box, Typography, Chip, Stack, styled } from '@mui/material';
+import { Card, Box, Typography, Chip, styled } from '@mui/material';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import { IconTile } from '../IconTile';

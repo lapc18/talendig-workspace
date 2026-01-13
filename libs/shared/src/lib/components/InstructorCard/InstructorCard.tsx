@@ -75,17 +75,6 @@ const FooterBox = styled(Box)(({ theme }) => ({
   borderTop: `1px solid ${theme.palette.mode === 'light' ? '#f1f5f9' : '#1f2937'}`,
 }));
 
-const BioBox = styled(Box)({
-  '& p': {
-    display: '-webkit-box',
-    WebkitLineClamp: 1,
-    WebkitBoxOrient: 'vertical',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    fontStyle: 'italic',
-  },
-});
-
 export const InstructorCard: FC<InstructorCardProps> = ({
   title,
   subtitle,
