@@ -7,7 +7,7 @@
   },
   "hosting": [
     {
-      "target": "dashboard",
+      "target": "talendig",
       "public": "dist/apps/dashboard",
       "ignore": [
         "**/.*",
