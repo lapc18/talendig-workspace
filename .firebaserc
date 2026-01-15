@@ -1,5 +1,18 @@
 {
   "projects": {
     "default": "talendig-e6501"
-  }
+  },
+  "targets": {
+    "talendig-e6501": {
+      "hosting": {
+        "schedule": [
+          "talendig-scheduler"
+        ],
+        "talendig": [
+          "talendig-e6501"
+        ]
+      }
+    }
+  },
+  "etags": {}
 }
